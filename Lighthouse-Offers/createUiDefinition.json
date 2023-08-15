@@ -7,9 +7,9 @@
             {
                 "name": "managedByTenantId",
                 "type": "Microsoft.Common.TextBox",
-                "label": "Managed By Tenant Id",
+                "label": "MSSP Tenant Id",
                 "defaultValue": "xxxxxxxx-xxxx-xxxx-xxxx-ca875621d489",
-                "toolTip": "Enter MSSP Tenant Id",
+                "toolTip": "Enter the correct MSSP Tenant Id",
                 "visible": true
             }
         ],
