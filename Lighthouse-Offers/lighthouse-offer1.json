@@ -3,8 +3,7 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "managedByTenantId": {
-            "type": "string",
-            "defaultValue": "xxxxxxxx-xxxx-xxxx-xxxx-ca875621d489"
+            "type": "string"
         }
     },
     "variables": {
