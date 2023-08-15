@@ -1,0 +1,126 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-08-01/subscriptionDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+    },
+    "variables": {
+        // MSSP Tenant Id
+        "managedByTenantId": "xxxxxxxx-xxxx-xxxx-xxxx-ca875621d489",
+        // Name of the offer
+        "mspOfferName": "MSSP SOC Services",
+        // Description of the offer
+        "mspOfferDescription": "MSSP SOC management services",
+        "mspRegistrationName": "[guid(variables('mspOfferName'))]",
+        "mspAssignmentName": "[guid(variables('mspOfferName'))]",
+        "level2GroupPrincipalIdDisplayName": "MSSP-SOC-Engineers",
+        "level2GroupPrincipalId": "049a8d41-2b62-4d8a-a781-e327f77c56f1",
+        "level1GroupPrincipalIdDisplayName": "MSSP-SOC-Analysts",
+        "level1GroupPrincipalId": "eb5e30f9-fad2-4fe8-9c2b-656d794a1d64",
+        "msspAzureSecurityInsightsPrincipalId": "452aa3d4-0bc3-403b-8c82-e8eedeee7b2a",
+        "authorizations": [
+            {
+                // Microsoft Sentinel Responder for Group 1
+                "principalId": "[variables('level1GroupPrincipalId')]",
+                "roleDefinitionId": "3e150937-b8fe-4cfb-8069-0eaf05ecd056",
+                "principalIdDisplayName": "[variables('level1GroupPrincipalIdDisplayName')]"
+            },
+            {
+                // Microsoft Sentinel Contributor for Group 2
+                "principalId": "[variables('level2GroupPrincipalId')]",
+                "roleDefinitionId": "ab8e14d6-4a74-4a29-9ba8-549422addade",
+                "principalIdDisplayName": "[variables('level2GroupPrincipalIdDisplayName')]"
+            },
+            {
+                // Log Analytics Contributor for Group 2
+                "principalId": "[variables('level2GroupPrincipalId')]",
+                "roleDefinitionId": "92aaf0da-9dab-42b6-94a3-d43ce8d16293",
+                "principalIdDisplayName": "[variables('level2GroupPrincipalIdDisplayName')]"
+            },
+            {
+                // Microsoft Sentinel Automation Contributor for MSSP Security Insights App 
+                "principalId": "[variables('msspAzureSecurityInsightsPrincipalId')]",
+                "roleDefinitionId": "f4c81013-99ee-4d62-a7ee-b3f1f648599a",
+                "principalIdDisplayName": "MSSP Azure Security Insights"
+            },
+            {
+                // Microsoft Sentinel Playbook Operator for Group 2
+                "principalId": "[variables('level2GroupPrincipalId')]",
+                "roleDefinitionId": "51d6186e-6489-4900-b93f-92e23144cca5",
+                "principalIdDisplayName": "[variables('level2GroupPrincipalIdDisplayName')]"
+            },
+            {
+                // Contributor role for Group 2
+                "principalId": "[variables('level2GroupPrincipalId')]",
+                "roleDefinitionId": "b24988ac-6180-42a0-ab88-20f7382dd24c",
+                "principalIdDisplayName": "[variables('level2GroupPrincipalIdDisplayName')]"
+            },
+            {
+                // Reader for Group 1
+                "principalId": "[variables('level1GroupPrincipalId')]",
+                "roleDefinitionId": "acdd72a7-3385-48ef-bd42-f606fba81ae7",
+                "principalIdDisplayName": "[variables('level1GroupPrincipalIdDisplayName')]"
+            },
+            {
+                // Reader for Group 2
+                "principalId": "[variables('level2GroupPrincipalId')]",
+                "roleDefinitionId": "acdd72a7-3385-48ef-bd42-f606fba81ae7",
+                "principalIdDisplayName": "[variables('level2GroupPrincipalIdDisplayName')]"
+            },
+            {
+                // Managed Service Registration Assignment Delete for Group 2
+                "principalId": "[variables('level2GroupPrincipalId')]",
+                "roleDefinitionId": "91c1777a-f3dc-4fae-b103-61d183457e46",
+                "principalIdDisplayName": "[variables('level2GroupPrincipalIdDisplayName')]"
+            },
+            {
+                // User Access Admin for Group 2
+                "principalId": "[variables('level2GroupPrincipalId')]",
+                "roleDefinitionId": "18d7d88d-d35e-4fb5-a5c3-7773c20a72d9",
+                "principalIdDisplayName": "[variables('level2GroupPrincipalIdDisplayName')]",
+                "delegatedRoleDefinitionIds": [
+                    "b24988ac-6180-42a0-ab88-20f7382dd24c",
+                    "92aaf0da-9dab-42b6-94a3-d43ce8d16293",
+                    "3913510d-42f4-4e42-8a64-420c390055eb", // Monitoring Metrics Publisher
+                    "749f88d5-cbae-40b8-bcfc-e573ddc772fa",
+                    "ab8e14d6-4a74-4a29-9ba8-549422addade",
+                    "91c1777a-f3dc-4fae-b103-61d183457e46",
+                    "acdd72a7-3385-48ef-bd42-f606fba81ae7"
+                ]
+            }
+        ]
+    },
+    "resources": [
+        {
+            "type": "Microsoft.ManagedServices/registrationDefinitions",
+            "apiVersion": "2022-10-01",
+            "name": "[variables('mspRegistrationName')]",
+            "properties": {
+                "registrationDefinitionName": "[variables('mspOfferName')]",
+                "description": "[variables('mspOfferDescription')]",
+                "managedByTenantId": "[variables('managedByTenantId')]",
+                "authorizations": "[variables('authorizations')]"
+            }
+        },
+        {
+            "type": "Microsoft.ManagedServices/registrationAssignments",
+            "apiVersion": "2022-10-01",
+            "name": "[variables('mspAssignmentName')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ManagedServices/registrationDefinitions/', variables('mspRegistrationName'))]"
+            ],
+            "properties": {
+                "registrationDefinitionId": "[resourceId('Microsoft.ManagedServices/registrationDefinitions/', variables('mspRegistrationName'))]"
+            }
+        }
+    ],
+    "outputs": {
+        "mspOfferName": {
+            "type": "string",
+            "value": "[concat('Managed by', ' ', variables('mspOfferName'))]"
+        },
+        "authorizations": {
+            "type": "array",
+            "value": "[variables('authorizations')]"
+        }
+    }
+}

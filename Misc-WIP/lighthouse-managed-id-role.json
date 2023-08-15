@@ -1,0 +1,30 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        //Generates a new random guid to be used as assignmnent ID
+        "rbacGuid": {
+            "type": "string",
+            "defaultValue": "[newGuid()]"
+        } 
+    },
+    "variables": {
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "2022-04-01",
+            "name": "[parameters('rbacGuid')]",
+            "dependsOn": [
+            ],
+            "properties": {
+               "roleDefinitionId": "[concat('/subscriptions/', subscription().id, '/resourceGroups/', resourceGroup().name,'/providers/Microsoft.Authorization/roleDefinitions/3913510d-42f4-4e42-8a64-420c390055eb')]",
+                // The principalType property will tell Microsoft.Authorization not to perform the check for existence on your principal ID during roleAssignment creation
+                "principalType": "ServicePrincipal",
+                "delegatedManagedIdentityResourceId": "[concat('/subscriptions/', subscription().id, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.ManagedIdentity/userAssignedIdentities/test-msi')]",
+                "principalId": "652ab54d-40a0-4ecb-9de9-d44d3d915ffa",
+                "scope": "[concat('/subscriptions/', subscription().id)]"
+                }
+        }
+    ]
+}

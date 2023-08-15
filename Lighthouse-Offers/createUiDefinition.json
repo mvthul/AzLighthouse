@@ -1,0 +1,34 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+    "handler": "Microsoft.Azure.CreateUIDef",
+    "version": "0.1.2-preview",
+    "parameters": {
+        "config": {
+            "basics": {
+                "description": "**MSSP SOC** deployment.",
+                "location": {
+                    "label": "Location",
+                    "toolTip": "Location for resources. Must be an MSSP approved region.",
+                    "resourceTypes": [
+                        "Microsoft.OperationalInsights/workspaces"
+                    ],
+                    "allowedValues": [
+                        "eastus",
+                        "eastus2",
+                        "westus2",
+                        "australiacentral",
+                        "brazilsouth",
+                        "southeastasia"
+                    ]
+                }
+            }
+        },
+        "basics": [
+          ],
+          "steps": [
+        ],
+        "outputs": {
+            "location": "[location()]"
+        }
+    }
+}
