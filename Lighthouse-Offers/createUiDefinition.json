@@ -13,7 +13,7 @@
                 "constraints": {
                     "required": true,
                     "regex": "",
-                    "validationMessage": "",
+                    "validationMessage": ""
                 },
                 "visible": true
             }
