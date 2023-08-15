@@ -11,9 +11,7 @@
                 "defaultValue": "xxxxxxxx-xxxx-xxxx-xxxx-ca875621d489",
                 "toolTip": "",
                 "constraints": {
-                    "required": true,
-                    "regex": "",
-                    "validationMessage": ""
+                    "required": true
                 },
                 "visible": true
             }
