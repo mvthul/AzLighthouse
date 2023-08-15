@@ -3,32 +3,24 @@
     "handler": "Microsoft.Azure.CreateUIDef",
     "version": "0.1.2-preview",
     "parameters": {
-        "config": {
-            "basics": {
-                "description": "**MSSP SOC** deployment.",
-                "location": {
-                    "label": "Location",
-                    "toolTip": "Location for resources. Must be an MSSP approved region.",
-                    "resourceTypes": [
-                        "Microsoft.OperationalInsights/workspaces"
-                    ],
-                    "allowedValues": [
-                        "eastus",
-                        "eastus2",
-                        "westus2",
-                        "australiacentral",
-                        "brazilsouth",
-                        "southeastasia"
-                    ]
-                }
-            }
-        },
         "basics": [
-          ],
-          "steps": [
+            {
+                "name": "managedByTenantId",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Managed By Tenant Id",
+                "defaultValue": "xxxxxxxx-xxxx-xxxx-xxxx-ca875621d489",
+                "toolTip": "",
+                "constraints": {
+                    "required": true,
+                    "regex": "",
+                    "validationMessage": "",
+                },
+                "visible": true
+            }
         ],
+        "steps": [],
         "outputs": {
-            "location": "[location()]"
+            "managedByTenantId": "[basics('managedByTenantId')]"
         }
     }
 }
