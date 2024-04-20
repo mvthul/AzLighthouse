@@ -1,7 +1,44 @@
+<#
+.SYNOPSIS
+    Export data from Azure Monitor (Log Analytics) to JSON files and upload to Azure Storage.
+.DESCRIPTION
+    This script exports data from Azure Monitor (Log Analytics) to JSON files and uploads the files to Azure Storage. 
+    The script requires the Azure Tenant ID, Azure Subscription ID, Log Analytics Workspace ID, Azure Storage Account name, 
+    Azure Storage Container name, and Azure Storage Account resource group. 
+.PARAMETER TableName
+    The name of the table to export data from.
+.PARAMETER ExportPath
+    The local path to export the JSON files to.
+.PARAMETER StartDate
+    The start date to export data from. Should be in the format MM/dd/yyyy.
+.PARAMETER EndDate
+    The end date to export data to. Should be in the format MM/dd/yyyy.
+.PARAMETER TenantId
+    The Azure Tenant ID for the Azure Subscription.
+.PARAMETER SubscriptionId
+    The Azure Subscription ID for the Azure Monitor (Sentinel) workspace and the Azure Storage Account.
+.PARAMETER WorkspaceId
+    The Log Analytics Workspace ID.
+.PARAMETER AzureStorageAccountName
+    The name of the Azure Storage Account to upload the data to.
+.PARAMETER AzureStorageContainer
+    The name of the Azure Storage Container to upload the data to.
+.PARAMETER AzureStorageAccountResourceGroup
+    The resource group for the Azure Storage Account.
+.PARAMETER HourIncrements
+    The number of hours to get data for in each iteration. This must be evenly divisible by 24. The default is 12 hours.
+.PARAMETER DoNotUpload
+    Set to $true to not upload the data to Azure Storage.
+.PARAMETER LogPath
+    The path to write the log file. The default is the export path.
+.EXAMPLE
+    .\Export-AzMonitorTable.ps1 -TableName "DeviceInfo" -ExportPath "C:\ExportTables" -StartDate "1/1/2023" -EndDate "1/11/2023" -TenantId "00000000-0000-0000-0000-000000000000" -SubscriptionId "00000000-0000-0000-0000-000000000000" -WorkspaceId "00000000-0000-0000-0000-000000000000" -AzureStorageAccountName "storageaccountname" -AzureStorageContainer "containername" -AzureStorageAccountResourceGroup "resourcegroupname" -HourIncrements 12 -DoNotUpload $false -LogPath "C:/SentinelTables"
+
+    #>
 [CmdletBinding()]
 param (
     $TableName = "DeviceInfo",
-    $ExportPath = (Join-Path "C:/" "SentinelTables"),
+    $ExportPath = (Join-Path "C:/" "ExportedTables"),
     [datetime]$StartDate = "1/1/2023",
     [datetime]$EndDate = "1/11/2023",
     # The Azure Tenant ID for the Azure Subscription
@@ -99,6 +136,7 @@ if (-not $WorkspaceId) {
     $WorkspaceId = Read-Host "Enter the Log Analytics Workspace ID:"
 }
 
+# If the DoNotUpload parameter is set to $true, the AzureStorageAccountName, AzureStorageContainer, and AzureStorageAccountResourceGroup parameters are not required.
 if ($false -eq $DoNotUpload) {
     if (-not $AzureStorageAccountName) {
         $AzureStorageAccountName = Read-Host "Enter the Azure Storage Account name:"
@@ -125,7 +163,8 @@ if (!(Test-Path $ExportPath)) {
 } 
 
 foreach ($table in $TableName) {
-    
+
+    # Set the log file path for the current table.
     $Script:LogFilePath = Join-Path $LogPath "$table-$(Get-Date -f yy.MM).log"
     # Create a loop to get data for one day at a time but for the entire range specified by $StartDate and $EndDate and $EndDate
     $EndDate = $EndDate.AddDays(1)
@@ -158,6 +197,7 @@ foreach ($table in $TableName) {
         # Write file for the current date
         if ($currentTableResultCount -ge 1) {
             $currentTableResult | ConvertTo-json -Depth 100 -Compress | Out-File $OutputFile -Force 
+            
             if (Test-Path $OutputFile) {           
                 if ($false -eq $DoNotUpload) {
                     $result = Set-AzStorageBlobContent -Context $context -Container $AzureStorageContainer -File $OutputFile -Blob $fileName -Force -ErrorAction SilentlyContinue 
