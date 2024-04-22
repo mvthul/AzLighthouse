@@ -188,19 +188,6 @@ foreach ($table in $TableName) {
         # Calculate the current date based on the start date and the loop index
         $currentDate = $StartDate.AddHours($i)
         $nextDate = $currentDate.AddHours($HourIncrements)
-            
-        # Construct the query for the current date
-        $currentQuery = $table
-        $currentTimeSpan = New-TimeSpan -Start $currentDate -End $nextDate
-        Write-Log "Getting data from $currentQuery for $currentDate to $nextDate"
-        # Get the Table data from Log Analytics for the current date
-        $currentTableResult = Invoke-AzOperationalInsightsQuery -WorkspaceId $WorkspaceId -Query $currentQuery -wait 600 -Timespan $currentTimeSpan | Select-Object Results -ExpandProperty Results -ExcludeProperty Results
-            
-        if ($? -eq $false) {
-            Write-Log -Message "Error: $table from $currentDate to $nextDate $($error.Exception) " -Severity Error
-            Write-Log -Message "Debug: EXCEPTION: $($error.Exception) `n CATEGORY: $($error.CategoryInfo) `n ERROR ID: $($error.FullyQualifiedErrorId) `n SCRIPT STACK TRACE: $($error.ScriptStackTrace)" -Severity Debug
-            continue
-        }
         
         # Construct the file names for the current date
         $jsonFileName = "$table-$($currentDate.ToString('yyyy-MM-dd-mmHHss'))-$($nextDate.ToString('yyyy-MM-dd-mmHHss')).json"
@@ -208,34 +195,59 @@ foreach ($table in $TableName) {
         $zipFileName = "$table-$($currentDate.ToString('yyyy-MM-dd-mmHHss'))-$($nextDate.ToString('yyyy-MM-dd-mmHHss')).json.zip"
         $outputZipFile = Join-Path $ExportPath $zipFileName
         
-        # Write file for the current date
-        if (($currentTableResult | Measure-Object).Count -ge 1) {
-            $currentTableResult | ConvertTo-json -Depth 100 -Compress | Out-File $outputJsonFile -Force
-            
-            if (Test-Path $outputJsonFile){
-                $outputJsonFile | Compress-Archive -DestinationPath $outputZipFile -Force
-            }
-            
-            if (Test-Path $outputZipFile) {       
-                # Remove the JSON file if the zip file was created.  
-                $null = Remove-Item $outputJsonFile -Force  
-                # upload the zip file to Azure Storage
-                if ($false -eq $DoNotUpload) {
-                    $result = Set-AzStorageBlobContent -Context $context -Container $AzureStorageContainer -File $outputZipFile -Blob $zipFileName -Force -ErrorAction SilentlyContinue 
-                    if ($result) {
-                        Write-Log "File $outputZipFile uploaded to Azure Storage" -Severity Debug
-                    }
-                    else {
-                        Write-Log "Failed to upload $outputZipFile to Azure Storage" -Severity Error
-                    }
-                }
-            }
-            else {
-                Write-Log "Failed to create file $outputZipFile" -Severity Debug
-            }       
+        # if the file already exists, skip querying the data
+        if (Test-Path $outputZipFile) {
+            Write-Log "File $outputZipFile already exists. Skipping." -Severity Information
+            continue
+        }
+        elseif (Test-Path $outputJsonFile) {
+            Write-Log "File $outputJsonFile already exists. Skipping." -Severity Information
+            continue
         }
         else {
-            Write-Log -Message "No data returned for $table from $currentDate to $nextDate" -Severity Debug
+        
+            # Construct the query for the current date
+            $currentQuery = $table
+            $currentTimeSpan = New-TimeSpan -Start $currentDate -End $nextDate
+            Write-Log "Getting data from $currentQuery for $currentDate to $nextDate"
+            # Get the Table data from Log Analytics for the current date
+            $currentTableResult = Invoke-AzOperationalInsightsQuery -WorkspaceId $WorkspaceId -Query $currentQuery -wait 600 -Timespan $currentTimeSpan | Select-Object Results -ExpandProperty Results -ExcludeProperty Results
+            
+            if ($? -eq $false) {
+                Write-Log -Message "Error: $table from $currentDate to $nextDate $($error.Exception) " -Severity Error
+                Write-Log -Message "Debug: EXCEPTION: $($error.Exception) `n CATEGORY: $($error.CategoryInfo) `n ERROR ID: $($error.FullyQualifiedErrorId) `n SCRIPT STACK TRACE: $($error.ScriptStackTrace)" -Severity Debug
+                continue
+            }
+
+            # Write file for the current date
+            if (($currentTableResult | Measure-Object).Count -ge 1) {
+                $currentTableResult | ConvertTo-json -Depth 100 -Compress | Out-File $outputJsonFile -Force
+            
+                if (Test-Path $outputJsonFile) {
+                    $outputJsonFile | Compress-Archive -DestinationPath $outputZipFile -Force
+                }
+            
+                if (Test-Path $outputZipFile) {       
+                    # Remove the JSON file if the zip file was created.  
+                    $null = Remove-Item $outputJsonFile -Force  
+                    # upload the zip file to Azure Storage
+                    if ($false -eq $DoNotUpload) {
+                        $result = Set-AzStorageBlobContent -Context $context -Container $AzureStorageContainer -File $outputZipFile -Blob $zipFileName -Force -ErrorAction SilentlyContinue 
+                        if ($result) {
+                            Write-Log "File $outputZipFile uploaded to Azure Storage" -Severity Debug
+                        }
+                        else {
+                            Write-Log "Failed to upload $outputZipFile to Azure Storage" -Severity Error
+                        }
+                    }
+                }
+                else {
+                    Write-Log "Failed to create file $outputZipFile" -Severity Debug
+                }       
+            }
+            else {
+                Write-Log -Message "No data returned for $table from $currentDate to $nextDate" -Severity Debug
+            }
         }
     }
 }
