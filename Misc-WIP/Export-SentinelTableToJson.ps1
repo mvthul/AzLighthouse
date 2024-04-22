@@ -1,14 +1,17 @@
+#requires -version 7 -modules Az.OperationalInsights
 <#
 .SYNOPSIS
-    Export data from Azure Monitor (Log Analytics) to JSON files and upload to Azure Storage.
+    Export data from Azure Monitor (Log Analytics) to JSON files and upload to Azure Storage. There is a 100 second limit on returning data from Log Analytics using the
+     Invoke-AzOperationalInsightsQuery cmdlet. This script will export data in 12 hour increments to avoid this limitation. This script provides methods for reducing the 
+     scope of the query to return the data within the 100 second limit.
 .DESCRIPTION
     This script exports data from Azure Monitor (Log Analytics) to JSON files and uploads the files to Azure Storage. 
     The script requires the Azure Tenant ID, Azure Subscription ID, Log Analytics Workspace ID, Azure Storage Account name, 
     Azure Storage Container name, and Azure Storage Account resource group. 
 .PARAMETER TableName
-    The name of the table to export data from.
+    The table name(s) to export data.
 .PARAMETER ExportPath
-    The local path to export the JSON files to.
+    The local path to export the data files to.
 .PARAMETER StartDate
     The start date to export data from. Should be in the format MM/dd/yyyy.
 .PARAMETER EndDate
@@ -37,9 +40,13 @@
     #>
 [CmdletBinding()]
 param (
-    $TableName = "DeviceInfo",
+    # The table name(s) to export data. This can be a single table or an array of tables.
+    [array]$TableName = "DeviceInfo",
+    # The local path to export data files to.
     $ExportPath = (Join-Path "C:/" "ExportedTables"),
+    # The start date to export data from, should be in the format MM/dd/yyyy
     [datetime]$StartDate = "1/1/2023",
+    # The end date to export data to, should be in the format MM/dd/yyyy
     [datetime]$EndDate = "1/11/2023",
     # The Azure Tenant ID for the Azure Subscription
     $TenantId,
@@ -110,7 +117,7 @@ function Write-Log {
     } | Export-Csv -Path $LogFilePath -Append -NoTypeInformation -Force -ErrorAction SilentlyContinue
 } 
 
-# There was an attempt to set the maximum idle time for the service point to 10 minutes (600000 milliseconds)
+# This was an attempt to set the maximum idle time for the service point to 10 minutes (600000 milliseconds) instead of the default 1000 milliseconds.
 [System.Net.ServicePointManager]::MaxServicePointIdleTime = 600000
 
 # Validate all parameters have been provided, if not prompt for them.
@@ -154,10 +161,14 @@ if (-not $HourIncrements) {
 }
 
 # Authenticate to Azure
+Write-Log "Authenticating to Azure." -Severity Information
 $null = Connect-AzAccount -TenantId $TenantId -Subscription $SubscriptionId | Out-Null
+
+# Get the Azure Storage Account context if the DoNotUpload parameter is set to $false.
 if ($false -eq $DoNotUpload) {
     $context = (Get-AzStorageAccount -ResourceGroupName $AzureStorageAccountResourceGroup -Name $AzureStorageAccountName).Context
 }
+# Create the export path if it does not exist.
 if (!(Test-Path $ExportPath)) { 
     $null = New-Item -ItemType Directory -Path $ExportPath
 } 
@@ -173,6 +184,7 @@ foreach ($table in $TableName) {
         
     # Loop through each timespan in the range
     for ($i = 0; $i -lt $hours; $i = $i + $HourIncrements) {
+
         # Calculate the current date based on the start date and the loop index
         $currentDate = $StartDate.AddHours($i)
         $nextDate = $currentDate.AddHours($HourIncrements)
@@ -180,7 +192,7 @@ foreach ($table in $TableName) {
         # Construct the query for the current date
         $currentQuery = $table
         $currentTimeSpan = New-TimeSpan -Start $currentDate -End $nextDate
-        Write-Output "Getting data from $currentQuery for $currentDate to $nextDate"
+        Write-Log "Getting data from $currentQuery for $currentDate to $nextDate"
         # Get the Table data from Log Analytics for the current date
         $currentTableResult = Invoke-AzOperationalInsightsQuery -WorkspaceId $WorkspaceId -Query $currentQuery -wait 600 -Timespan $currentTimeSpan | Select-Object Results -ExpandProperty Results -ExcludeProperty Results
             
@@ -190,27 +202,36 @@ foreach ($table in $TableName) {
             continue
         }
         
-        $currentTableResultCount = ($currentTableResult | Measure-Object).Count
-        $fileName = "$table-$($currentDate.ToString('yyyy-MM-dd-mmHHss'))-$($nextDate.ToString('yyyy-MM-dd-mmHHss')).json"
-        $OutputFile = Join-Path $ExportPath $fileName
+        # Construct the file names for the current date
+        $jsonFileName = "$table-$($currentDate.ToString('yyyy-MM-dd-mmHHss'))-$($nextDate.ToString('yyyy-MM-dd-mmHHss')).json"
+        $outputJsonFile = Join-Path $ExportPath $jsonFileName
+        $zipFileName = "$table-$($currentDate.ToString('yyyy-MM-dd-mmHHss'))-$($nextDate.ToString('yyyy-MM-dd-mmHHss')).json.zip"
+        $outputZipFile = Join-Path $ExportPath $zipFileName
         
         # Write file for the current date
-        if ($currentTableResultCount -ge 1) {
-            $currentTableResult | ConvertTo-json -Depth 100 -Compress | Out-File $OutputFile -Force 
+        if (($currentTableResult | Measure-Object).Count -ge 1) {
+            $currentTableResult | ConvertTo-json -Depth 100 -Compress | Out-File $outputJsonFile -Force
             
-            if (Test-Path $OutputFile) {           
+            if (Test-Path $outputJsonFile){
+                $outputJsonFile | Compress-Archive -DestinationPath $outputZipFile -Force
+            }
+            
+            if (Test-Path $outputZipFile) {       
+                # Remove the JSON file if the zip file was created.  
+                $null = Remove-Item $outputJsonFile -Force  
+                # upload the zip file to Azure Storage
                 if ($false -eq $DoNotUpload) {
-                    $result = Set-AzStorageBlobContent -Context $context -Container $AzureStorageContainer -File $OutputFile -Blob $fileName -Force -ErrorAction SilentlyContinue 
+                    $result = Set-AzStorageBlobContent -Context $context -Container $AzureStorageContainer -File $outputZipFile -Blob $zipFileName -Force -ErrorAction SilentlyContinue 
                     if ($result) {
-                        #Write-Verbose "File $OutputFile uploaded to Azure Storage"
+                        Write-Log "File $outputZipFile uploaded to Azure Storage" -Severity Debug
                     }
                     else {
-                        Write-Verbose "Failed to upload file $OutputFile to Azure Storage"
+                        Write-Log "Failed to upload $outputZipFile to Azure Storage" -Severity Error
                     }
                 }
             }
             else {
-                Write-Verbose "Failed to create file $OutputFile"
+                Write-Log "Failed to create file $outputZipFile" -Severity Debug
             }       
         }
         else {
