@@ -60,13 +60,17 @@ New-AzRoleAssignment -RoleDefinitionId $azureRoleId -ObjectId $umi.Id -Scope $sc
 
 The customer should complete the following tasks from their tenant.
 
-### TLDR: Automated Process: Click to create the App Registration same
+### Automated Process (Preferred)
+
+Click the button below to automatically create the service principal using the UMI created earlier.
 
 <a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fjoelst%2FAzLighthouse%2Fmain%2FDeploy-ServicePrincipal%2Fdeployment.json" target="_blank"><img src="https://aka.ms/deploytoazurebutton"/>
 
-### If the automated process doesn't work, the customer can manually create the resource using one of the processes below:
+### Manual process (If the automated process doesn't work)
 
 #### Manual Option 1: Using the Azure portal
+
+Sign in to the Azure portal and complete these high-level steps.
 
 1. Create a Service Principal in customer tenant
 2. Assign the Service Principal the Monitoring Metrics Publisher role (3913510d-42f4-4e42-8a64-420c390055eb) for entire subscription.
