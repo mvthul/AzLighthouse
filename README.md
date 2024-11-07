@@ -60,11 +60,11 @@ New-AzRoleAssignment -RoleDefinitionId $azureRoleId -ObjectId $umi.Id -Scope $sc
 
 Many of these steps are being automated. For the time being complete the customer should the following manual tasks from the MSSP tenant.
 
-### TLDR Click this button to do the same
+### TLDR: Click this button to do the same
 
 <a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fjoelst%2FAzLighthouse%2Fmain%2FDeploy-ServicePrincipal%2Fdeployment.json" target="_blank"><img src="https://aka.ms/deploytoazurebutton"/>
 
-### If the automated process doesn't work these steps, the customer can use the following steps:
+### If the automated process doesn't work, the customer can perform the following steps:
 
 1. Create a Service Principal in customer tenant
 2. Assign the Service Principal the Monitoring Metrics Publisher role (3913510d-42f4-4e42-8a64-420c390055eb) for entire subscription.
