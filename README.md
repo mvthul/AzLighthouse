@@ -64,13 +64,15 @@ The customer should complete the following tasks from their tenant.
 
 <a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fjoelst%2FAzLighthouse%2Fmain%2FDeploy-ServicePrincipal%2Fdeployment.json" target="_blank"><img src="https://aka.ms/deploytoazurebutton"/>
 
-### If the automated process doesn't work, the customer can perform the following steps:
+### If the automated process doesn't work, the customer can manually create the resource.
+
+Complete the following steps from the portal:
 
 1. Create a Service Principal in customer tenant
 2. Assign the Service Principal the Monitoring Metrics Publisher role (3913510d-42f4-4e42-8a64-420c390055eb) for entire subscription.
 3. Create credentials for the SP and securely supply to MSSP.
 
-These tasks can be completed in the Azure Portal using Cloud Shell. Open the Cloud Shell verify that PowerShell (not Bash) is the selected shell type.
+These tasks can also be completed in the Azure Portal using Cloud Shell. Open the Cloud Shell, and verify that PowerShell (not Bash) is the selected shell. Then run the following script:
 
 ```PowerShell
 # Name of the service principal
