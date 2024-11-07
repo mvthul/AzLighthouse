@@ -56,11 +56,11 @@ New-AzRoleAssignment -RoleDefinitionId $azureRoleId -ObjectId $umi.Id -Scope $sc
 
 ```
 
-## 4. MSSP creates Service Principal and assigns permissions
+## 4. MSSP creates Service Principal / App Registration and assigns permissions
 
-Many of these steps are being automated. For the time being complete the customer should the following manual tasks from the MSSP tenant.
+The customer should complete the following tasks from their tenant.
 
-### TLDR: Click this button to do the same
+### TLDR: Click this button to create the App Registration same
 
 <a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fjoelst%2FAzLighthouse%2Fmain%2FDeploy-ServicePrincipal%2Fdeployment.json" target="_blank"><img src="https://aka.ms/deploytoazurebutton"/>
 
@@ -84,6 +84,6 @@ New-AzADServicePrincipalCredential -ObjectId $sp.Id
 
 ## 5. Deploy Sentinel using template.
 
-If you would like the connectors connected you will want the customer with Global Admin to go through these steps. Otherwise the SOC can complete the basic deployment and the work with the customer to complete the configuration steps.
+If you would like the standard connectors to be connected, the customer must be signed in with Global Admin. Otherwise the SOC can complete the basic deployment and the work with the customer to complete the configuration steps.
 
 <a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fjoelst%2FAzLighthouse%2Fmain%2FDeploy-Sentinel%2Fazuredeploy.json/createUIDefinitionUri/https%3A%2F%2Fraw.githubusercontent.com%2Fjoelst%2FAzLighthouse%2Fmain%2FDeploy-Sentinel%2FcreateUiDefinition.json" target="_blank"><img src="https://aka.ms/deploytoazurebutton"/>
