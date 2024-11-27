@@ -22,7 +22,7 @@ These tasks can be completed in the Azure Portal using Cloud Shell. Open the Clo
 
 ```PowerShell
 # Change CustomerName to the name of the SOC customer
-$umiName = "CustomerName-MSSP-SOC-UMI"
+$umiName = "MsspName-SOC-UMI"
 # Default resource group for managed identities
 $rg = "soc-identities"
 $azRegion = "eastus" # this should match your deployment region and should only be: eastus, eastus2, westus2, australiacentral, brazilsouth, southeastasia
@@ -82,7 +82,7 @@ These tasks can also be completed in the Azure Portal using Cloud Shell. Open th
 
 ```PowerShell
 # Name of the service principal
-$servicePrincipalName = "MSSP-SOC-Ingestion-SP"
+$servicePrincipalName = "MsspNameSOC-Sentinel-LogIngest"
 $subscriptionId = (Get-AzContext).Subscription.Id
 $sp = New-AzAdServicePrincipal -DisplayName $servicePrincipalName
 $scope = "/subscriptions/$($subscriptionId)"
