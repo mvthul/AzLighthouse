@@ -78,7 +78,7 @@ Sign in to the Azure portal and complete these high-level steps.
 
 #### Manual Option 2: Using the Azure Cloud Shell
 
-These tasks can also be completed in the Azure Portal using Cloud Shell. Open the Cloud Shell, and verify that PowerShell (not Bash) is the selected shell. Then run the following script:
+These tasks can also be completed in the Azure Portal using Cloud Shell. Open the Cloud Shell, and verify that PowerShell (not Bash) is selected. Then run the following script:
 
 ```PowerShell
 # Name of the service principal
