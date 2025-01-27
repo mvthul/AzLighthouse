@@ -23,6 +23,12 @@ These tasks can be completed in the Azure Portal using Cloud Shell. Open the Clo
 ```PowerShell
 # Change CustomerName to the name of the SOC customer
 $umiName = "MsspName-SOC-UMI"
+
+# Add required Azure Resource Providers
+Register-AzResourceProvider -ProviderNamespace Microsoft.Insights
+Register-AzResourceProvider -ProviderNamespace Microsoft.ManagedServices
+Register-AzResourceProvider -ProviderNamespace Microsoft.ManagedIdentity
+
 # Default resource group for managed identities
 $rg = "soc-identities"
 $azRegion = "eastus" # this should match your deployment region and should only be: eastus, eastus2, westus2, australiacentral, brazilsouth, southeastasia
