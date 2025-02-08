@@ -133,12 +133,15 @@
     },
     {
       "type": "Microsoft.Automation/automationAccounts/runbooks",
-      "apiVersion": "2019-06-01",
+      "apiVersion": "2023-11-01",
       "name": "[format('{0}/{1}', parameters('accountName'), parameters('rsocRunbookName'))]",
       "location": "[parameters('deployLocation')]",
       "tags": {},
       "properties": {
         "runbookType": "PowerShell",
+        "runtimeEnvironment": {
+          "name": "[parameters('pwshRuntimeName')]"
+        },
         "logProgress": false,
         "logVerbose": false,
         "description": "[parameters('rsocRunbookDescription')]",
@@ -148,7 +151,8 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Automation/automationAccounts', parameters('accountName'))]"
+        "[resourceId('Microsoft.Automation/automationAccounts', parameters('accountName'))]",
+        "[resourceId('Microsoft.Automation/automationAccounts/runtimeEnvironments', parameters('accountName'), parameters('pwshRuntimeName'))]"
       ]
     },
     {
@@ -273,7 +277,7 @@
       "apiVersion": "2023-11-01",
       "name": "[concat(parameters('accountName'), '/APP_SEARCH_STRING')]",
       "properties": {
-                "isEncrypted": false,
+        "isEncrypted": false,
         "value": "[parameters('appSearchString')]",
         "description": "App search string"
       },
