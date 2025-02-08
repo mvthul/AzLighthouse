@@ -245,8 +245,7 @@
       "apiVersion": "2023-11-01",
       "name": "[concat(parameters('accountName'), '/APP_SEARCH_STRING')]",
       "properties": {
-        "description": "Application search string",
-        "value": "*-Sentinel-Ingestion"
+        "value": "\"*-Sentinel-Ingestion\""
       },
       "dependsOn": [
         "[resourceId('Microsoft.Automation/automationAccounts', parameters('accountName'))]"
@@ -258,8 +257,7 @@
       "name": "[concat(parameters('accountName'), '/NEW_APP_REG_NAME')]",
       "properties": {
         "isEncrypted": false,
-        "description": "New application registration name",
-        "value": "MSSP-Sentinel-Ingestion"
+        "value": "\"MSSP-Sentinel-Ingestion\""
       },
       "dependsOn": [
         "[resourceId('Microsoft.Automation/automationAccounts', parameters('accountName'))]"
@@ -271,8 +269,7 @@
       "name": "[concat(parameters('accountName'), '/SECRET_API_URI')]",
       "properties": {
         "isEncrypted": false,
-        "description": "Secret API URI",
-        "value": "https://logicapp.azure.com/"
+        "value": "\"https://logicapp.azure.com/\""
       },
       "dependsOn": [
         "[resourceId('Microsoft.Automation/automationAccounts', parameters('accountName'))]"
@@ -283,9 +280,8 @@
       "apiVersion": "2023-11-01",
       "name": "[concat(parameters('accountName'), '/UMI_ID')]",
       "properties": {
-
-        "description": "User managed identity ID",
-        "value": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+        "isEncrypted": false,
+        "value": "\"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\""
       },
       "dependsOn": [
         "[resourceId('Microsoft.Automation/automationAccounts', parameters('accountName'))]"
