@@ -35,7 +35,7 @@
       "metadata": {
         "description": "URI to the runbook content"
       },
-      "defaultValue": "https://raw.githubusercontent.com/joelst/AzLighthouse/refs/heads/main/Deploy-ServicePrincipal/New-AppRegistrationCredentialCheck.ps1"
+      "defaultValue": "https://raw.githubusercontent.com/joelst/AzLighthouse/refs/heads/main/azure-automate/New-AppRegistrationCredentialCheck.ps1"
     },
     "rsocRunbookDescription": {
       "type": "string",
@@ -252,7 +252,7 @@
         "[resourceId('Microsoft.Automation/automationAccounts', parameters('accountName'))]"
       ]
     },
-        {
+    {
       "type": "Microsoft.Automation/automationAccounts/variables",
       "apiVersion": "2023-11-01",
       "name": "[concat(parameters('accountName'), '/NEW_APP_REG_NAME')]",
@@ -265,7 +265,7 @@
         "[resourceId('Microsoft.Automation/automationAccounts', parameters('accountName'))]"
       ]
     },
-        {
+    {
       "type": "Microsoft.Automation/automationAccounts/variables",
       "apiVersion": "2023-11-01",
       "name": "[concat(parameters('accountName'), '/SECRET_API_URI')]",
@@ -278,12 +278,12 @@
         "[resourceId('Microsoft.Automation/automationAccounts', parameters('accountName'))]"
       ]
     },
-        {
+    {
       "type": "Microsoft.Automation/automationAccounts/variables",
       "apiVersion": "2023-11-01",
       "name": "[concat(parameters('accountName'), '/UMI_ID')]",
       "properties": {
-        "isEncrypted": false,
+
         "description": "User managed identity ID",
         "value": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
       },
