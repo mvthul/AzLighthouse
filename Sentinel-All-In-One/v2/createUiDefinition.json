@@ -605,12 +605,13 @@
           }
         ],
         "outputs": {
+            "workspaceName": "[concat(basics('customerPrefix'),'-sentinel',location())]",
             "customerPrefix": "[basics('customerPrefix')]",
             "dailyQuota": "[basics('dailyQuota')]",
             "dataRetention": "[basics('dataRetention')]",
             "pricingTier": "[basics('pricingTier')]",
             "capacityReservation": "[basics('capacityReservation')]",
-            "enableUeba": "[steps('settings').enableUeba]",
+            "enableUeba": "true",
             "identityProviders": "[steps('settings').identityProviders]",
             "enableDiagnostics": "[steps('settings').enableDiagnostics]",
             "enableSolutions1P": "[steps('solutions').enableSolutions1P]",
@@ -621,7 +622,8 @@
             "location": "[location()]",
             "enableMLAlerts": "[steps('analyticsRules').enableMLAlerts]",
             "enableScheduledAlerts": "[steps('analyticsRules').enableScheduledAlerts]",
-            "severityLevels": "[steps('analyticsRules').severityLevels]"
+            "severityLevels": "[steps('analyticsRules').severityLevels]",
+            "rgName": "[concat(basics('customerPrefix'),'-sentinel-prod-rg')]"
         }
     }
 }
