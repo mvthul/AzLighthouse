@@ -619,7 +619,7 @@
           }
         ],
         "outputs": {
-            "workspaceName": "[basics('workspaceName')]",
+            "customerPrefix": "[basics('customerPrefix')]",
             "dailyQuota": "[basics('dailyQuota')]",
             "dataRetention": "[basics('dataRetention')]",
             "pricingTier": "[basics('pricingTier')]",
