@@ -123,6 +123,14 @@
                         {
                             "label": "5000 GB",
                             "value": 5000
+                        },
+                        {
+                            "label": "10000 GB",
+                            "value": 10000
+                        },
+                        {
+                            "label": "25000 GB",
+                            "value": 25000
                         }
                     ],
                     "required": true
@@ -613,8 +621,7 @@
             "location": "[location()]",
             "enableMLAlerts": "[steps('analyticsRules').enableMLAlerts]",
             "enableScheduledAlerts": "[steps('analyticsRules').enableScheduledAlerts]",
-            "severityLevels": "[steps('analyticsRules').severityLevels]",
-            "rgName": "[concat(basics('customerPrefix'),'-Sentinel-Prod-rg']"
+            "severityLevels": "[steps('analyticsRules').severityLevels]"
         }
     }
 }
