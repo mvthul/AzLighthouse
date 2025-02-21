@@ -605,6 +605,7 @@
           }
         ],
         "outputs": {
+            "customerPrefix": "[basics('customerPrefix')]",
             "dailyQuota": "[basics('dailyQuota')]",
             "dataRetention": "[basics('dataRetention')]",
             "pricingTier": "[basics('pricingTier')]",
