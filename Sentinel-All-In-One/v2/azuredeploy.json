@@ -2,16 +2,13 @@
     "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "rgName": {
-            "type": "string"
-        },
         "location": {
             "type": "string"
         },
-        "workspaceName": {
+        "customerPrefix": {
             "type": "string",
             "metadata": {
-                "description": "Name for the Log Analytics workspace"
+                "description": "Prefix name for the customer"
             }
         },
         "pricingTier": {
@@ -143,7 +140,7 @@
             },
             "defaultValue": false
         },
-        "_artifactsLocation": {
+        "artifactsLocation": {
             "type": "string",
             "metadata": {
                 "description": "The location of resources"
@@ -156,18 +153,18 @@
         {
             "type": "Microsoft.Resources/resourceGroups",
             "apiVersion": "2020-06-01",
-            "name": "[parameters('rgName')]",
+            "name": "concat(parameters('customerPrefix'),'-sentinel-prod-rg')",
             "location": "[parameters('location')]",
             "properties": {}
         },
         {
             "name": "workspaceCreation",
             "type": "Microsoft.Resources/deployments",
-            "apiVersion": "2020-06-01",
+            "apiVersion": "2024-07-01",
             "dependsOn": [
-                "[resourceId('Microsoft.Resources/resourceGroups',parameters('rgName'))]"
+                "[resourceId('Microsoft.Resources/resourceGroups',concat(parameters('customerPrefix'),'-sentinel-prod-rg'))]"
             ],
-            "resourceGroup": "[parameters('rgName')]",
+            "resourceGroup": "[concat(parameters('customerPrefix'),'-sentinel-prod-rg')]",
             "properties": {
                 "mode": "Incremental",
                 "templateLink": {
@@ -176,7 +173,7 @@
                 },
                 "parameters": {
                     "workspaceName": {
-                        "value": "[parameters('workspaceName')]"
+                        "value": "[concat(parameters('customerPrefix'),'-sentinel-prod-rg',parameters('location'))]"
                     },
                     "pricingTier": {
                         "value": "[parameters('pricingTier')]"
@@ -202,11 +199,11 @@
         {
             "type": "Microsoft.Resources/deployments",
             "name": "settings",
-            "apiVersion": "2020-06-01",
+            "apiVersion": "2024-07-01",
             "dependsOn": [
                 "workspaceCreation"
             ],
-            "resourceGroup": "[parameters('rgName')]",
+            "resourceGroup": "[concat(parameters('customerPrefix'),'-sentinel-prod-rg')]",
             "properties": {
                 "mode": "Incremental",
                 "templateLink": {
@@ -215,7 +212,7 @@
                 },
                 "parameters": {
                     "workspaceName": {
-                        "value": "[parameters('workspaceName')]"
+                        "value": "[concat(parameters('customerPrefix'),'-sentinel-prod-rg',parameters('location'))]"
                     },
                     "enableUeba": {
                         "value": "[parameters('enableUeba')]"
@@ -233,8 +230,8 @@
             "condition": "[not(empty(parameters('enableDataConnectors')))]",
             "name": "enableDataConnectors",
             "type": "Microsoft.Resources/deployments",
-            "apiVersion": "2020-06-01",
-            "resourceGroup": "[parameters('rgName')]",
+            "apiVersion": "2024-07-01",
+            "resourceGroup": "[concat(parameters('customerPrefix'),'-sentinel-prod-rg')]",
             "dependsOn": [
                 "workspaceCreation",
                 "enableSolutionsAndAlerts"
@@ -253,7 +250,7 @@
                         "value": "[parameters('aadStreams')]"
                     },
                     "workspaceName": {
-                        "value": "[parameters('workspaceName')]"
+                        "value": "[concat(parameters('customerPrefix'),'-sentinel-prod-rg',parameters('location'))]"
                     },
                     "tenantId": {
                         "value": "[subscription().tenantId]"
@@ -272,10 +269,10 @@
             "name": "enableSolutionsAndAlerts",
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2020-06-01",
-            "resourceGroup": "[parameters('rgName')]",
+            "resourceGroup": "[concat(parameters('customerPrefix'),'-Sentinel-Prod-rg')]",
             "dependsOn": [
                 "workspaceCreation",
-                "[resourceId('Microsoft.Resources/resourceGroups',parameters('rgName'))]"
+                "[resourceId('Microsoft.Resources/resourceGroups',concat(parameters('customerPrefix'),'-Sentinel-Prod-rg'))]"
             ],
             "properties": {
                 "mode": "Incremental",
@@ -294,7 +291,7 @@
                         "value": "[replace(replace(string(parameters('enableSolutionsTraining')),'[',''),']','')]"
                     },
                     "workspaceName": {
-                        "value": "[parameters('workspaceName')]"
+                        "value": "[concat(parameters('customerPrefix'),'-sentinel-prod-rg',parameters('location'))]"
                     },
                     "severityLevels": {
                         "value": "[replace(replace(string(parameters('severityLevels')),'[',''),']','')]"
@@ -312,7 +309,7 @@
     "outputs": {
         "workspaceName": {
             "type": "string",
-            "value": "[parameters('workspaceName')]"
+            "value": "[concat(parameters('customerPrefix'),'-Sentinel-','',parameters('location'))]"
         },
         "dataConnectorsList": {
             "type": "string",

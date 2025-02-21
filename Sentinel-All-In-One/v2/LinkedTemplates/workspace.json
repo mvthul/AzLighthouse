@@ -82,7 +82,7 @@
         {
             "name": "[parameters('workspaceName')]",
             "type": "Microsoft.OperationalInsights/workspaces",
-            "apiVersion": "2015-11-01-preview",
+            "apiVersion": "2023-09-01",
             "location": "[parameters('location')]",
             "properties": {
                 "retentionInDays": "[parameters('dataRetention')]",
@@ -100,7 +100,7 @@
             "type": "Microsoft.SecurityInsights/onboardingStates",
             "name": "default",
             "scope": "[concat('Microsoft.OperationalInsights/workspaces/', parameters('workspaceName'))]",
-            "apiVersion": "2022-12-01-preview",
+            "apiVersion": "2025-01-01-preview",
             "properties": {
             },
             "dependsOn": [

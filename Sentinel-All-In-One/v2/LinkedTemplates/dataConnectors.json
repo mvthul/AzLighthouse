@@ -59,9 +59,9 @@
          {
             "condition": "[contains(parameters('dataConnectorsKind'), 'AzureActiveDirectory')]",
             "type": "microsoft.aadiam/diagnosticSettings",
-            "apiVersion": "2017-04-01",
+            "apiVersion": "2021-05-01-preview",
             "scope": "/",
-            "name": "[format('{0}-aadDiagnosticSetttings', parameters('workspaceName'))]",
+            "name": "[format('{0}-aadDiagnosticSettings', parameters('workspaceName'))]",
             "properties": {
             "logs": [
                 {
