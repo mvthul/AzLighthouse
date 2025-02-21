@@ -605,7 +605,6 @@
           }
         ],
         "outputs": {
-            "workspaceName": "[concat(basics('customerPrefix'),'-Sentinel-',basics('location')]",
             "dailyQuota": "[basics('dailyQuota')]",
             "dataRetention": "[basics('dataRetention')]",
             "pricingTier": "[basics('pricingTier')]",
