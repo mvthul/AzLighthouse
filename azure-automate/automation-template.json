@@ -58,20 +58,6 @@
       },
       "defaultValue": "MSSP-Sentinel-Ingestion-UMI"
     },
-    "subscriptionId": {
-      "type": "string",
-      "defaultValue": "[subscription().subscriptionId]",
-      "metadata": {
-        "description": "Subscription ID"
-      }
-    },
-    "resourceGroupName": {
-      "type": "string",
-      "defaultValue": "[resourceGroup().name]",
-      "metadata": {
-        "description": "Resource group name"
-      }
-    },
     "pwshRuntimeName": {
       "type": "string",
       "metadata": {
@@ -118,7 +104,7 @@
       "identity": {
         "type": "SystemAssigned, UserAssigned",
         "userAssignedIdentities": {
-          "[format('/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{2}', parameters('subscriptionId'), parameters('resourceGroupName'), parameters('userAssignedIdentityId'))]": {}
+          "[format('/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{2}', subscription().subscriptionId, resourceGroup().name, parameters('userAssignedIdentityId'))]": {}
         }
       },
       "properties": {
@@ -271,6 +257,22 @@
       "dependsOn": [
         "[resourceId('Microsoft.Automation/automationAccounts', parameters('accountName'))]"
       ]
+    },
+    {
+      "type": "Microsoft.Automation/automationAccounts/jobSchedules",
+      "apiVersion": "2023-11-01",
+      "name": "[concat(parameters('accountName'), 'spdaily8am')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Automation/automationAccounts/schedules', '/SP_daily_8am')]"
+      ],
+      "properties": {
+        "runbook": {
+          "name": "[parameters('rsocRunbookName')]"
+        },
+        "schedule": {
+          "name": "SP_daily_8am"
+        }
+      }
     },
     {
       "type": "Microsoft.Automation/automationAccounts/variables",
