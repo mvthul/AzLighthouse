@@ -35,7 +35,7 @@
       "metadata": {
         "description": "New GUID"
       },
-      "defaultValue": "[guid(concat('xxxxxxxx-xxxx-xxxx-xxxx-', uniqueString(resourceGroup().id)))]"
+      "defaultValue": "[newGuid()]"
     },
     "rsocRunbookContentUri": {
       "type": "string",
