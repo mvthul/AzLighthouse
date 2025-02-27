@@ -270,7 +270,7 @@
       "apiVersion": "2023-11-01",
       "name": "[format('{0}/{1}', parameters('accountName'), parameters('newGuid'))]",
       "dependsOn": [
-        "[resourceId('Microsoft.Automation/automationAccounts/schedules', '/SP_daily_8am')]"
+        "[resourceId('Microsoft.Automation/automationAccounts/schedules', 'SP_daily_8am')]"
       ],
       "properties": {
         "runbook": {
