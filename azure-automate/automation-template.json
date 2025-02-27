@@ -30,6 +30,13 @@
         "description": "Location for automation account"
       }
     },
+    "newGuid": {
+      "type": "string",
+      "metadata": {
+        "description": "New GUID"
+      },
+      "defaultValue": "[guid(concat('xxxxxxxx-xxxx-xxxx-xxxx-', uniqueString(resourceGroup().id)))]"
+    },
     "rsocRunbookContentUri": {
       "type": "string",
       "metadata": {
@@ -261,7 +268,7 @@
     {
       "type": "Microsoft.Automation/automationAccounts/jobSchedules",
       "apiVersion": "2023-11-01",
-      "name": "[format('{0}/{1}', parameters('accountName'), newGuid())]",
+      "name": "[format('{0}/{1}', parameters('accountName'), parameters('newGuid'))]",
       "dependsOn": [
         "[resourceId('Microsoft.Automation/automationAccounts/schedules', '/SP_daily_8am')]"
       ],
