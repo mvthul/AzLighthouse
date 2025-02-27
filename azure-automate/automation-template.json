@@ -261,7 +261,7 @@
     {
       "type": "Microsoft.Automation/automationAccounts/jobSchedules",
       "apiVersion": "2023-11-01",
-      "name": "[parameters('accountName')]",
+      "name": "[format('{0}/{1}', parameters('accountName'), newGuid())]",
       "dependsOn": [
         "[resourceId('Microsoft.Automation/automationAccounts/schedules', '/SP_daily_8am')]"
       ],
