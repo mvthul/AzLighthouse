@@ -38,13 +38,6 @@
         "description": "Name of the resource group"
       }
     },
-    "rsocRunbookName": {
-      "type": "string",
-      "defaultValue": "defaultRunbookName",
-      "metadata": {
-        "description": "Name of the RSOC runbook"
-      }
-    },
     "resources": [
       {
         "type": "Microsoft.Automation/automationAccounts",
