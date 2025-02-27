@@ -131,10 +131,8 @@
       "location": "[parameters('deployLocation')]",
       "tags": {},
       "properties": {
-        "runbookType": "PowerShell72",
-        "runtimeEnvironment": {
-          "name": "[parameters('pwshRuntimeName')]"
-        },
+        "runbookType": "PowerShell",
+        "runtimeEnvironment": "[parameters('pwshRuntimeName')]",
         "logProgress": false,
         "logVerbose": false,
         "description": "[parameters('rsocRunbookDescription')]",
