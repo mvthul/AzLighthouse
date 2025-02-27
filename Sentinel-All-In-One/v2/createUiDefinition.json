@@ -23,7 +23,7 @@
                 "label": "Customer name prefix",
                 "placeholder": "",
                 "defaultValue": "XXXX",
-                "toolTip": "Enter the customer prefix nae",
+                "toolTip": "Enter the customer prefix name like 'Txxx'",
                 "constraints": {
                     "required": true,
                     "regex": "^[A-Za-z0-9][A-Za-z0-9-]+[A-Za-z0-9]$",
@@ -232,19 +232,14 @@
                         "constraints": {
                             "allowedValues": [
                                 {
-                                    "label": "Azure Active Directory",
-                                    "description": "The Azure Active Directory solution for Microsoft Sentinel enables you to ingest Azure Active Directory Audit,Sign-in,Provisioning,Risk Events and Risky User/Service Principal logs using Diagnostic Settings into Microsoft Sentinel.",
+                                    "label": "Entra Id",
+                                    "description": "The Entra Id solution for Microsoft Sentinel enables you to ingest Azure Active Directory Audit,Sign-in,Provisioning,Risk Events and Risky User/Service Principal logs using Diagnostic Settings into Microsoft Sentinel.",
                                     "value": "Azure Active Directory"
                                 },
                                 {
                                     "label": "Azure Activity",
                                     "description": "The Azure Activity solution for Microsoft Sentinel enables you to ingest Azure Activity Administrative, Security, Service Health, Alert, Recommendation, Policy, Autoscale and Resource Health logs using Diagnostic Settings into Microsoft Sentinel.",
                                     "value": "Azure Activity"
-                                },
-                                {
-                                    "label": "Dynamics 365 CE",
-                                    "description": "The Microsoft Sentinel solution for Dynamics 365 CE apps provides threat monitoring, detection and incident response capabilities for Dynamics 365 CE apps.",
-                                    "value": "Dynamics 365 CE Apps"
                                 },
                                 {
                                     "label": "Microsoft 365",

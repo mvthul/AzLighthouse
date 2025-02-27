@@ -14,14 +14,14 @@
       "metadata": {
         "description": "Name of the automation account"
       },
-      "defaultValue": "MSSP-RSOC-SP-Management"
+      "defaultValue": "MSSP-ServicePrincipal-Management"
     },
     "scheduleStart": {
       "type": "string",
       "metadata": {
         "description": "When to start the schedule"
       },
-      "defaultValue": "[dateTimeAdd(utcNow(), 'PT90M', 'O')]"
+      "defaultValue": "[dateTimeAdd(utcNow(), 'PT90M')]"
     },
     "deployLocation": {
       "type": "string",
@@ -49,14 +49,14 @@
       "metadata": {
         "description": "Name of the runbook"
       },
-      "defaultValue": "MSSP-RSOC-ServicePrincipal-Runbook"
+      "defaultValue": "MSSP-ServicePrincipal-Runbook"
     },
     "userAssignedIdentityId": {
       "type": "string",
       "metadata": {
         "description": "User assigned identity ID"
       },
-      "defaultValue": "MSSP-RSOC-Sentinel-Ingestion-UMI"
+      "defaultValue": "MSSP-Sentinel-Ingestion-UMI"
     },
     "subscriptionId": {
       "type": "string",

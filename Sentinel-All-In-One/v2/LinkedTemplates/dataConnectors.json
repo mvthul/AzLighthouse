@@ -6,13 +6,13 @@
             "type": "array",
             "defaultValue": [],
             "metadata": {
-                "description": "The kind of data connectors to enable"
+                "description": "The data connectors to enable"
             }
         },
         "aadStreams": {
             "type": "array",
             "metadata": {
-                "description": "The list of data types to enable for Emtra Id connector"
+                "description": "The list of data types to enable for Entra Id connector"
             },
             "defaultValue": []
         },
@@ -32,7 +32,7 @@
             "type": "string",
             "defaultValue": "[subscription().subscriptionId]",
             "metadata": {
-                "description": "Sbscription Id to monitor"
+                "description": "Subscription Id to monitor"
             }
         },
         "location": {
