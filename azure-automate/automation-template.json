@@ -126,7 +126,7 @@
       "properties": {
         "runbookType": "PowerShell",
         "runtimeEnvironment": {
-          "name": "[parameters('pwshRuntimeName')]"
+          "name": "[format('{0}/{1}', parameters('accountName'), parameters('pwshRuntimeName'))]"
         },
         "logProgress": false,
         "logVerbose": false,
