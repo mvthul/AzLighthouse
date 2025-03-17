@@ -226,7 +226,7 @@
         },
         "defaultPackages": {
           "az": "12.3.0",
-          "azure cli": "2.56.0"
+          "azure cli": "2.64.0"
         }
       },
       "dependsOn": [
