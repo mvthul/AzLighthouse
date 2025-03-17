@@ -54,7 +54,7 @@
       },
       "defaultValue": "MSSP-ServicePrincipal-Runbook"
     },
-    "userAssignedIdentityId": {
+    "userAssignedIdentityName": {
       "type": "string",
       "metadata": {
         "description": "User assigned identity name"
@@ -107,7 +107,7 @@
       "identity": {
         "type": "SystemAssigned, UserAssigned",
         "userAssignedIdentities": {
-          "[format('/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{2}', subscription().subscriptionId, resourceGroup().name, parameters('userAssignedIdentityId'))]": {}
+          "[format('/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{2}', subscription().subscriptionId, resourceGroup().name, parameters('userAssignedIdentityName'))]": {}
         }
       },
       "properties": {
