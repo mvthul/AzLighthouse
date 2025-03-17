@@ -57,7 +57,7 @@
     "userAssignedIdentityId": {
       "type": "string",
       "metadata": {
-        "description": "User assigned identity ID"
+        "description": "User assigned identity name"
       },
       "defaultValue": "MSSP-Sentinel-Ingestion-UMI"
     },
