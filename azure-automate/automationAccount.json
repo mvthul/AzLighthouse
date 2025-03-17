@@ -59,7 +59,7 @@
       "metadata": {
         "description": "User assigned identity name"
       },
-      "defaultValue": "MSSP-Sentinel-Ingestion-UMI2"
+      "defaultValue": "MSSP-Sentinel-Ingestion-UMI"
     },
     "pwshRuntimeName": {
       "type": "string",
