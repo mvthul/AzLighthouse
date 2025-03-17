@@ -225,7 +225,7 @@
           "version": "7.4"
         },
         "defaultPackages": {
-          "az": "11.2.0",
+          "az": "12.3.0",
           "azure cli": "2.56.0"
         }
       },
