@@ -1,5 +1,14 @@
 #requires -module Microsoft.Graph.Authentication, Microsoft.Graph.Application, Microsoft.Graph.Users.Actions, Microsoft.Graph.DirectoryObjects, Microsoft.Graph.Identity.DirectoryManagement
 
+<#
+.SYNOPSIS
+    Monitors and rotates Azure AD application credentials.
+    
+.DESCRIPTION
+    This script checks App Registrations for expiring credentials and creates 
+    new ones when needed. It also reports credential status to a notification endpoint.
+#>
+
 [CmdletBinding()]
 param (
     [Parameter()]
@@ -46,22 +55,18 @@ if ([string]::IsNullOrWhiteSpace($NewAppRegName)) {
 
 # Check if all required parameters are set.
 if ($null -eq $UMIId) {
-    Write-Error "No UMI Id specified"
-    exit
+    throw "No UMI Id specified"
 }
 if ($null -eq $SecretApiUri) {
-    Write-Error "No Secret API URI specified"
-    exit
+    throw "No Secret API URI specified"
 }
 
 if ($null -eq $AppSearchString) {
-    Write-Error "No App Search String specified"
-    exit
+    throw "No App Search String specified"
 }
 
 if ($null -eq $NewAppRegName) {
-    Write-Error "No New App Reg Name specified"
-    exit
+    throw "No New App Reg Name specified"
 }
 
 function New-SecretNotification {
@@ -209,8 +214,10 @@ function New-SecretNotification {
     }
     catch {
         Write-Error "Failed to post to $URI"
+        Write-Error "Secret for $ApplicationId was not successfully submitted to MSSP."
         Write-Error $_.Exception.Message
     }
+
     return $true
 }
 
@@ -245,9 +252,9 @@ function New-AppRegCredential {
         $secret = Add-MgApplicationPassword -ApplicationId $AppId -PasswordCredential $passwordCred
     }
     catch {
-        Write-Error "Failed to create a new secret."
+        Write-Error "Failed to create a new secret for application $($AppDisplayName)."
         Write-Error $_.Exception.Message
-        continue
+        return $false  # Return a failure status
     }
     
     # if the valid application password was created, post it to the main tenant.
@@ -260,10 +267,11 @@ function New-AppRegCredential {
         # If a new credential was needed, but it was not created.
         # This may not be a catostrophic problem if another AppRegistration has a valid credential
         # We will check at the end to see if this is a real problem.
-        Write-Warning "New secret was required for $($appDisplayName), however a new secret could not be created"
+        Write-Warning "New secret was required for $($AppDisplayName), however a new secret could not be created"
         $Script:ValidAppRegExists = $false
     }
 }
+
 # Ensures you do not inherit an AzContext in your runbook
 Disable-AzContextAutosave -Scope Process | Out-Null
 
@@ -284,19 +292,25 @@ $env:TENANT_NAME = $azureTenant.Name
 $env:TENANT_DOMAIN = $azureTenant.DefaultDomain
 
 if ($null -eq $env:TENANT_NAME) {
-    $mgOrg = Get-MgOrganization
+    $mgOrg = Get-MgOrganization -ErrorAction SilentlyContinue
     $env:TENANT_NAME = $mgOrg.DisplayName 
-    $env:TENANT_DOMAIN = (Get-MgDomain | Where-Object { $_.IsInitial -eq $true }).Id
+
+    $env:TENANT_DOMAIN = (Get-MgDomain -ErrorAction SilentlyContinue | Where-Object { $_.IsInitial -eq $true }).Id
 }
 
 # track that at least one credential is valid
 $validAppRegExists = $false
+
+# Get all the apps that match the search string or the new app registration name.
+#$filter = "startswith(displayName,'$AppSearchString') or displayName eq '$NewAppRegName'"
+#$apps = Get-MgApplication -Filter $filter -Top 999
 
 # Get all the apps from graph and then filter out only those that have "-Sentinel-Ingestion" in the name.
 $allApps = Get-MgApplication
 
 # find all legacy app registrations
 $apps = $allApps | Where-Object { $_.DisplayName -like $AppSearchString -or $_.DisplayName -like $NewAppRegName }
+
 
 # if no proper application registrations are found, create a new one.
 if ($apps.Count -eq 0) {
@@ -315,11 +329,20 @@ if ($apps.Count -eq 0) {
     New-AzRoleAssignment -RoleDefinitionId "3913510d-42f4-4e42-8a64-420c390055eb" -ObjectId $sp.Id -Scope $scope
     $appCred = $sp | Select-Object -ExpandProperty PasswordCredentials | Select-Object -First 1
     
-    # Just in case it takes a bit longer to return the data, wait before querying.
-    Start-Sleep -seconds 20
-    
+    # Wait for the new application registration to be created.
+    # This is needed because the application registration may take a few seconds to be created.
+    $retryCount = 0
+    $maxRetries = 10
+    $app = $null
+
+    while ($null -eq $app -and $retryCount -lt $maxRetries) {
+        Start-Sleep -Seconds 5
+        $app = Get-MgApplication | Where-Object { $_.DisplayName -like $NewAppRegName }
+        $retryCount++
+    }
+
     # Refresh the list to include the new one
-    $app = Get-MgApplication | Where-Object { $_.DisplayName -like $NewAppRegName }
+    #$app = Get-MgApplication | Where-Object { $_.DisplayName -like $NewAppRegName }
     if ($null -eq $app) {
         Write-Error "Failed to create a new application registration."
         exit
@@ -329,7 +352,7 @@ if ($apps.Count -eq 0) {
             $app = $app[0]
         }
 
-        Write-Output "Posting new secret to main tenant."
+        Write-Output "Posting new secret for $($app.DisplayName) ($($app.Id)) to MSSP with an expiration date of $($appCred.EndDateTime)"
         # Post the secret info to a API/Azure Function/Azure Logic App/etc to save this in the main tenant.
         $null = New-SecretNotification -URI $SecretApiUri -ApplicationId $app.Id -SecretName $appCred.Hint -PublisherDomain $app.PublisherDomain -CreateDate $appCred.StartDateTime -EndDate $appCred.EndDateTime -KeyId $appCred.KeyId -Action "Create" -SecretText $appCred.SecretText -TenantId $env:TENANT_ID -TenantName $env:TENANT_NAME -TenantDomain $env:TENANT_DOMAIN
         $validCredentialExists = $true
@@ -339,13 +362,12 @@ if ($apps.Count -eq 0) {
 
 }
 
-# Go through each of the apps and check credentials expiration.
+# Go through each of the apps and check credential expiration.
 foreach ($app in $apps) {
 
-    # Keep track to see if we need to create a new cred.
-    # There is probably a better way to do this, but this is working.
-    $need = 0
-    # This is set to $true if there is at least one valid credential. 
+    # Track if credential rotation is needed (increments per expiring credential)
+    $expiredCredentialCount = 0
+    # This flag tracks if at least one valid credential exists across all app registrations
     [bool]$validCredentialExists = $false
 
     # Check each credential.
@@ -355,8 +377,8 @@ foreach ($app in $apps) {
         # Output the details for logging and troubleshooting.
         Write-Output "`n--------------------------------------------------"
         Write-Output "Tenant ID: $($env:TENANT_ID)"
-        Write-Output "Tenant Name: $($azureTenant.Name)"
-        Write-Output "Tenant Domain: $($azureTenant.DefaultDomain)"
+        Write-Output "Tenant Name: $($env:TENANT_NAME)"
+        Write-Output "Tenant Domain: $($env:TENANT_DOMAIN)"
         Write-Output "Application: $($app.DisplayName)"
         Write-Output "Credential count: $($app.PasswordCredentials.Count)"
         Write-Output "Checking credential: $($cred.DisplayName)"
@@ -374,10 +396,14 @@ foreach ($app in $apps) {
         
             # It is possible there are more than one credential and if one is valid we don't need to create a new one
             # This Keep track whether we need to create a new credential
-            $need++
-        
-            Remove-MgApplicationPassword -ApplicationId $app.Id -KeyId $cred.KeyId
-
+            # Track if credential rotation is needed (increments per expiring credential)
+            $expiredCredentialCount++
+            try {
+                Remove-MgApplicationPassword -ApplicationId $app.Id -KeyId $cred.KeyId
+            }
+            catch {
+                Write-Error "Failed to remove the credential $($cred.DisplayName) from $($app.DisplayName)"
+            }
             # Post that this secret is being removed to a API/Azure Function/Azure Logic App/etc to save this in the main tenant.
             $null = New-SecretNotification -URI $SecretApiUri -ApplicationId $app.Id -SecretName $cred.DisplayName -PublisherDomain $app.PublisherDomain -CreateDate $cred.StartDateTime -EndDate $cred.EndDateTime -KeyId $cred.KeyId -Action "Delete" -TenantId $env:TENANT_ID -TenantName $env:TENANT_NAME -TenantDomain $env:TENANT_DOMAIN
 
@@ -385,7 +411,7 @@ foreach ($app in $apps) {
         elseif ($dateDifference.days -le $DaysBeforeExpiration) {
             Write-Output "Expires within $DaysBeforeExpiration days! $((Get-Date).AddDays(- $DaysBeforeExpiration) - $cred.EndDateTime)"           
             # Yes if this is the only cred we need to create one
-            $need++
+            $expiredCredentialCount++
         }
         else {
             Write-Output "Credential Valid - Expires: $($cred.EndDateTime)"
@@ -397,7 +423,7 @@ foreach ($app in $apps) {
     }
 
     # If there are expired/expiring credential(s) and no valid credentials
-    if ($need -gt 0 -and $validCredentialExists -eq $false) {
+    if ($expiredCredentialCount -gt 0 -and $validCredentialExists -eq $false) {
 
         New-AppRegCredential -appId $app.Id -SecretApiUri $SecretApiUri -CredentialValidDays $CredentialValidDays -AppPublisherDomain $app.PublisherDomain -AppDisplayName $app.DisplayName
     }
