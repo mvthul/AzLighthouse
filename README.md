@@ -35,6 +35,7 @@ $context = Set-AzContext -Subscription $subscription
 $umiName = "MSSP-Sentinel-Ingestion-UMI"
 $azRegion = "eastus"
 $rg = "$($customerPrefix)-Sentinel-Prod-rg"
+$appName = "MSSP-Sentinel-Ingestion"
 
 # Add required Azure Resource Providers
 Register-AzResourceProvider -ProviderNamespace Microsoft.Insights
@@ -52,8 +53,6 @@ $addPermissions = @(
 $subscriptionId = (Get-AzContext).Subscription.Id
 $scope = "/subscriptions/$($subscriptionId)"
 $azureOwnerRoleId = "8e3af657-a8ff-443c-a75c-2fe8c4bcb635" # This is Owner.
-$azureKVAdminRoleId = "00482a5a-887f-4fb3-b363-3b7fe8e74483" # This is Key Vault Administrator.
-$azureKVUserRoleId = "4633458b-17de-408a-b874-0445c86b69e6" # This is Key Vault Secrets User.
 
 # Create resource group if needed.
 if ([string]::IsNullOrEmpty((Get-AzResourceGroup -Name $rg -ErrorAction SilentlyContinue))) {
@@ -88,6 +87,11 @@ $addPermissions = @(
 )
 
 $appRoles | ForEach-Object { New-AzureAdServiceAppRoleAssignment -ObjectId $umi.Id -PrincipalId $umi.Id -ResourceId $graphSp.Id -Id $_.Id }
+
+$output = New-AzAdServicePrincipal -DisplayName $appName
+Start-Sleep 20
+$adsp = Get-AzAdServicePrincipal -DisplayName $appName
+New-AzRoleAssignment -RoleDefinitionId '3913510d-42f4-4e42-8a64-420c390055eb' -ObjectId $adsp.Id -Scope $subscription
 
 ```
 

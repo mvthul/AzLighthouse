@@ -311,24 +311,32 @@ $allApps = Get-MgApplication
 # find all legacy app registrations
 $apps = $allApps | Where-Object { $_.DisplayName -like $AppSearchString -or $_.DisplayName -like $NewAppRegName }
 
-
 # if no proper application registrations are found, create a new one.
 if ($apps.Count -eq 0) {
 
     Write-Warning "No applications found with the search string $AppSearchString or named $NewAppRegName"
     
     # Create a new service principal with the name $NewAppRegName
-    Write-Output "Creating a new service principal $NewAppRegName with role Owner on subscription $subscriptionId"
     $subscriptionId = (Get-AzContext).Subscription.Id
-    
-    # Create a new service principal with the name $NewAppRegName
-    $sp = New-AzAdServicePrincipal -DisplayName $NewAppRegName -Description "Created by MSSP RSOC Automation on $(Get-Date)" -EndDate (Get-Date).AddDays($CredentialValidDays)
     $scope = "/subscriptions/$($subscriptionId)"
+    Write-Output "Creating a new service principal $NewAppRegName with Owner role on subscription $subscriptionId"
+
+    try {
+        # Create a new service principal with the name $NewAppRegName
+        $sp = New-AzAdServicePrincipal -DisplayName $NewAppRegName -Description "Created by MSSP RSOC Automation on $(Get-Date)" -EndDate (Get-Date).AddDays($CredentialValidDays)
+    }
+    catch {
+        Write-Error "Failed to create a new service principal $NewAppRegName"
+        Write-Error $_.Exception.Message
+        continue
+    }
     
-    # Assign the service principal the Owner role on the subscription
-    New-AzRoleAssignment -RoleDefinitionId "3913510d-42f4-4e42-8a64-420c390055eb" -ObjectId $sp.Id -Scope $scope
-    $appCred = $sp | Select-Object -ExpandProperty PasswordCredentials | Select-Object -First 1
-    
+    if ($null -ne $sp) {
+        # Assign the service principal the Owner role on the subscription
+        New-AzRoleAssignment -RoleDefinitionId "3913510d-42f4-4e42-8a64-420c390055eb" -ObjectId $sp.Id -Scope $scope
+        $appCred = $sp | Select-Object -ExpandProperty PasswordCredentials | Select-Object -First 1
+    }
+
     # Wait for the new application registration to be created.
     # This is needed because the application registration may take a few seconds to be created.
     $retryCount = 0
@@ -341,8 +349,6 @@ if ($apps.Count -eq 0) {
         $retryCount++
     }
 
-    # Refresh the list to include the new one
-    #$app = Get-MgApplication | Where-Object { $_.DisplayName -like $NewAppRegName }
     if ($null -eq $app) {
         Write-Error "Failed to create a new application registration."
         exit
