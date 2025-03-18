@@ -66,7 +66,7 @@
       "metadata": {
         "description": "Name of the PowerShell runtime environment"
       },
-      "defaultValue": "PowerShell_74_Plus"
+      "defaultValue": "PowerShell_72_Plus"
     },
     "umiClientId": {
       "type": "string",
@@ -122,12 +122,12 @@
     },
     {
       "type": "Microsoft.Automation/automationAccounts/runbooks",
-      "apiVersion": "2024-10-23",
+      "apiVersion": "2023-11-01",
       "name": "[format('{0}/{1}', parameters('accountName'), parameters('rsocRunbookName'))]",
       "location": "[parameters('location')]",
       "tags": {},
       "properties": {
-        "runbookType": "PowerShell74",
+        "runbookType": "PowerShell72",
         "runtimeEnvironment": "[parameters('pwshRuntimeName')]",
         "logProgress": false,
         "logVerbose": false,
@@ -147,7 +147,7 @@
       "apiVersion": "2023-05-15-preview",
       "name": "[format('{0}/{1}/Microsoft.Graph.Users', parameters('accountName'), parameters('pwshRuntimeName'))]",
       "properties": {
-        "contentLink": { "uri": "https://www.powershellgallery.com/api/v2/package/Microsoft.Graph.Users/" }
+        "contentLink": { "uri": "https://www.powershellgallery.com/api/v2/package/Microsoft.Graph.Users/2.25.0" }
       },
       "dependsOn": [
         "[resourceId('Microsoft.Automation/automationAccounts', parameters('accountName'))]",
@@ -159,7 +159,7 @@
       "apiVersion": "2023-05-15-preview",
       "name": "[format('{0}/{1}/Microsoft.Graph.Authentication', parameters('accountName'), parameters('pwshRuntimeName'))]",
       "properties": {
-        "contentLink": { "uri": "https://www.powershellgallery.com/api/v2/package/Microsoft.Graph.Authentication/" }
+        "contentLink": { "uri": "https://www.powershellgallery.com/api/v2/package/Microsoft.Graph.Authentication/2.25.0" }
       },
       "dependsOn": [
         "[resourceId('Microsoft.Automation/automationAccounts', parameters('accountName'))]",
@@ -171,7 +171,7 @@
       "apiVersion": "2023-05-15-preview",
       "name": "[format('{0}/{1}/Microsoft.Graph.Applications', parameters('accountName'), parameters('pwshRuntimeName'))]",
       "properties": {
-        "contentLink": { "uri": "https://www.powershellgallery.com/api/v2/package/Microsoft.Graph.Applications/" }
+        "contentLink": { "uri": "https://www.powershellgallery.com/api/v2/package/Microsoft.Graph.Applications/2.25.0" }
       },
       "dependsOn": [
         "[resourceId('Microsoft.Automation/automationAccounts', parameters('accountName'))]",
@@ -183,7 +183,7 @@
       "apiVersion": "2023-05-15-preview",
       "name": "[format('{0}/{1}/Microsoft.Graph.Users.Actions', parameters('accountName'), parameters('pwshRuntimeName'))]",
       "properties": {
-        "contentLink": { "uri": "https://www.powershellgallery.com/api/v2/package/Microsoft.Graph.Users.Actions/" }
+        "contentLink": { "uri": "https://www.powershellgallery.com/api/v2/package/Microsoft.Graph.Users.Actions/2.25.0" }
       },
       "dependsOn": [
         "[resourceId('Microsoft.Automation/automationAccounts', parameters('accountName'))]",
@@ -195,7 +195,7 @@
       "apiVersion": "2023-05-15-preview",
       "name": "[format('{0}/{1}/Microsoft.Graph.DirectoryObjects', parameters('accountName'), parameters('pwshRuntimeName'))]",
       "properties": {
-        "contentLink": { "uri": "https://www.powershellgallery.com/api/v2/package/Microsoft.Graph.DirectoryObjects/" }
+        "contentLink": { "uri": "https://www.powershellgallery.com/api/v2/package/Microsoft.Graph.DirectoryObjects/2.25.0" }
       },
       "dependsOn": [
         "[resourceId('Microsoft.Automation/automationAccounts', parameters('accountName'))]",
@@ -207,7 +207,7 @@
       "apiVersion": "2023-05-15-preview",
       "name": "[format('{0}/{1}/Microsoft.Graph.Identity.DirectoryManagement', parameters('accountName'), parameters('pwshRuntimeName'))]",
       "properties": {
-        "contentLink": { "uri": "https://www.powershellgallery.com/api/v2/package/Microsoft.Graph.Identity.DirectoryManagement/" }
+        "contentLink": { "uri": "https://www.powershellgallery.com/api/v2/package/Microsoft.Graph.Identity.DirectoryManagement/2.25.0" }
       },
       "dependsOn": [
         "[resourceId('Microsoft.Automation/automationAccounts', parameters('accountName'))]",
@@ -216,13 +216,13 @@
     },
     {
       "type": "Microsoft.Automation/automationAccounts/runtimeEnvironments",
-      "apiVersion": "2024-10-23",
+      "apiVersion": "2023-05-15-preview",
       "name": "[format('{0}/{1}', parameters('accountName'), parameters('pwshRuntimeName'))]",
       "location": "[parameters('location')]",
       "properties": {
         "runtime": {
           "language": "PowerShell",
-          "version": "7.4"
+          "version": "7.2"
         },
         "defaultPackages": {
           "az": "12.3.0",
