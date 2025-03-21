@@ -35,7 +35,11 @@ param (
     [Parameter()]
     [string]
     # Name for newly created application registrations.
-    $NewAppRegName
+    $NewAppRegName,
+    [Parameter()]
+    [bool]
+    # When set to true, a new application registration will be created even if one already exists.
+    $CreateNewAppReg = $false
 
 )
 
@@ -223,6 +227,7 @@ function New-SecretNotification {
         Write-Error "Failed to post to $URI"
         Write-Error "Secret for $ApplicationId was not successfully submitted to MSSP."
         Write-Error $_.Exception.Message
+        return $false  # Return a failure status
     }
 
     return $true
@@ -272,6 +277,7 @@ function New-AppRegCredential {
         # Post the secret info to a API/Azure Function/Azure Logic App/etc to save this in the main tenant.
         $null = New-SecretNotification -URI $SecretApiUri -AppId $AppId -ApplicationId $ApplicationId -SecretName $secret.DisplayName -PublisherDomain $appPublisherDomain -CreateDate $secret.StartDateTime -EndDate $secret.EndDateTime -KeyId $secret.KeyId -Action "Create" -SecretText $secret.SecretText -TenantDomain $env:TENANT_DOMAIN -TenantId $env:TENANT_ID -TenantName $env:TENANT_NAME
         $Script:ValidAppRegExists = $true
+
     }
     else {
         # If a new credential was needed, but it was not created.
@@ -279,7 +285,9 @@ function New-AppRegCredential {
         # We will check at the end to see if this is a real problem.
         Write-Warning "New secret was required for $($AppDisplayName), however a new secret could not be created"
         $Script:ValidAppRegExists = $false
+        return $false  # Return a failure status
     }
+    return $true  # Return a success status
 }
 
 # Ensures you do not inherit an AzContext in your runbook
@@ -310,9 +318,6 @@ if ($null -eq $env:TENANT_NAME) {
 # track that at least one credential is valid
 $validAppRegExists = $false
 
-# Determine if we need to create a new app registration or not.
-$createNewAppReg = $true
-
 # Get all the apps from graph and then filter out only those that have "-Sentinel-Ingestion" in the name.
 $allApps = Get-MgApplication
 
@@ -320,9 +325,7 @@ $allApps = Get-MgApplication
 $apps = $allApps | Where-Object { $_.DisplayName -like $AppSearchString -or $_.DisplayName -like $NewAppRegName }
 #$apps = $allApps | Where-Object { $_.DisplayName -like $NewAppRegName }
 
-
-# if no proper application registrations are found, create a new one.
-if ($apps.Count -ne 0) {
+if ($apps.Count -ne 0 -and $CreateNewAppReg -eq $false) {
     # We found at least one app registration that matches the search string so we don't need to create a new one, yet.
     $createNewAppReg = $false
     
@@ -348,13 +351,13 @@ if ($apps.Count -ne 0) {
         foreach ($cred in $app.PasswordCredentials) {
             # Difference between now and the expiration of the credential
             $dateDifference = New-TimeSpan -Start (Get-Date) -End $cred.EndDateTime
-
-            Write-Output "`n  Checking credential: $($cred.DisplayName)"
-            Write-Output "  Created: $($cred.StartDateTime)"
-            Write-Output "  Expires: $($cred.EndDateTime)"
-            Write-Output "  Current Time: $(Get-Date)"
-            Write-Output "  Expired: $($dateDifference -le 0)"   
-            Write-Output "  Date difference in days: $($dateDifference.days)"
+            Write-Output "`n  === Credential [$($cred.DisplayName)] ==="
+            Write-Output "  > Created: $($cred.StartDateTime)"
+            Write-Output "  > Expires: $($cred.EndDateTime)"
+            Write-Output "  > Current Time: $(Get-Date)"
+            Write-Output "  > Is Expired: $($dateDifference -le 0)"   
+            Write-Output "  > Date difference (days): $($dateDifference.days)"
+            Write-Output "  === "
 
             # If the credential is expired or will expire within the next $DaysBeforeExpiration days, we need to create a new one.
             # If the date differences is less than or equal to 0 that means it has expired.
@@ -387,7 +390,7 @@ if ($apps.Count -ne 0) {
                 $validCredentialExists = $true
                 $validAppRegExists = $true
             }
-
+            
         }
 
         # If there are expired/expiring credential(s) and no valid credentials
@@ -404,13 +407,15 @@ if ($apps.Count -ne 0) {
         }
         else {
             Write-Output "  At least one valid key is present for $($app.DisplayName)."
-        }
+        }  
     }
+}
+else {
+    # No application registrations found that match the search string.
+    $createNewAppReg = $true
 }
 
 if ($createNewAppReg -eq $true) {
-    Write-Warning "No applications found with the search string $AppSearchString or named $NewAppRegName"
-    
     # Create a new service principal with the name $NewAppRegName
     $subscriptionId = (Get-AzContext).Subscription.Id
     $scope = "/subscriptions/$($subscriptionId)"
@@ -439,24 +444,32 @@ if ($createNewAppReg -eq $true) {
 
     while ($null -eq $app -and $retryCount -lt $maxRetries) {
         Start-Sleep -Seconds 5
-        $app = Get-MgApplication | Where-Object { $_.Id -eq $sp.Id }
+        $app = Get-MgApplication -ConsistencyLevel eventual -All | Where-Object { $_.AppId -eq $sp.AppId }
         $retryCount++
     }
+
     Write-Debug "Found application $($app.DisplayName) ($($app.Id)) after $($retryCount) retries."
     Write-Debug "Adding the UMI as an owner of the application $($app.DisplayName) ($($app.Id))"
-    New-MgApplicationOwnerByRef -ApplicationId $app.Id -BodyParameter $appOwner
+
+    # This adds the UMI as an owner of the application registration.
+    # This seems to fail if the UMI does not have the Application.ReadWrite.All permission.
+    # TODO - Check if the UMI has the Application.ReadWrite.All permission and if not, notify someone to add it.
+    New-MgApplicationOwnerByRef -ApplicationId $app.Id -BodyParameter $appOwner -ErrorAction SilentlyContinue
+
     # Assign the service principal the Owner role on the subscription
     Write-Debug "Assigning the Owner role to the service principal $($sp.DisplayName) ($($sp.Id)) on the subscription $subscriptionId"
     New-AzRoleAssignment -RoleDefinitionId "3913510d-42f4-4e42-8a64-420c390055eb" -ObjectId $sp.Id -Scope $scope
     $appCred = $sp | Select-Object -ExpandProperty PasswordCredentials | Select-Object -First 1
 
-    if ($null -eq $app) {
+    if ($null -eq $appCred) {
         Write-Error "Failed to create a new application registration."
-        exit
+        #exit
     }
     else {
+        
+        # If there are multiple application registrations, we need to select the first one.
         if ($app.Count -gt 1) {
-            $app = $app[0]
+            $app = $app | Select-Object -First 1
         }
 
         Write-Output "Posting new secret for $($app.DisplayName) ($($app.Id)) to MSSP with an expiration date of $($appCred.EndDateTime)"
@@ -466,7 +479,6 @@ if ($createNewAppReg -eq $true) {
         $validAppRegExists = $true
 
     }
-
 }
 
 # If there is no valid credential after all this then we need to raise an issue
