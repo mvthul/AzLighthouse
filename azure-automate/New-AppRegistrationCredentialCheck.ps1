@@ -323,7 +323,7 @@ $azureAutomationContext = $azureAutomationContext.context
 $azureContext = Set-AzContext -SubscriptionName $azureAutomationContext.Subscription -DefaultProfile $azureAutomationContext
 
 # Connect to Graph
-Connect-MgGraph -Identity -ClientId $UmiId
+Connect-MgGraph -Identity -ClientId $UmiId -NoWelcome
 
 $azureTenant = Get-AzTenant -ErrorAction SilentlyContinue
 $env:TENANT_ID = $azureTenant.Id
