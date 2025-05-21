@@ -35,6 +35,8 @@ do {
 $umiName = 'MSSP-Sentinel-Ingestion-UMI'
 $rg = "$($customerPrefix)-Sentinel-Prod-rg"
 
+Set-AzContext -SubscriptionId $subscription
+
 # Install the required PowerShell modules
 Install-Module Az.Resources -Scope CurrentUser -SkipPublisherCheck -Force -AllowClobber -AcceptLicense
 Install-Module Microsoft.Graph.Authentication -Scope CurrentUser -SkipPublisherCheck -Force -AllowClobber -AcceptLicense
@@ -47,6 +49,7 @@ Register-AzResourceProvider -ProviderNamespace Microsoft.ManagedIdentity
 
 # Default resource group for managed identities
 $graphAppId = '00000003-0000-0000-c000-000000000000' # Don't change this.
+
 # Get the context of the current subscription
 $subscriptionId = (Get-AzContext).Subscription.Id
 $scope = "/subscriptions/$($subscriptionId)"
