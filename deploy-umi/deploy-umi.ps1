@@ -19,7 +19,7 @@ param (
   [Parameter()]
   [string] $CustomerPrefix,
   [Parameter()]
-  [string] $SubscriptionId,
+  [string] $Subscription,
   [Parameter()]
   [string] $AzRegion = 'eastus'
 )
@@ -29,11 +29,11 @@ do {
 } while ($customerPrefix.Length -lt 3)
 
 do {
-  $subscription = Read-Host 'Enter the subscription id: '
-} while ($subscription.Length -lt 36)
+  $Subscription = Read-Host 'Enter the subscription id: '
+} while ($Subscription.Length -lt 36)
 
 $umiName = 'MSSP-Sentinel-Ingestion-UMI'
-$rg = "$($customerPrefix)-Sentinel-Prod-rg"
+$rg = "$($customerPrefix.ToUpper())-Sentinel-Prod-rg"
 
 Set-AzContext -SubscriptionId $subscription
 
@@ -88,7 +88,7 @@ $adsp = Get-AzADServicePrincipal -DisplayName $AppName
 # Assign the UMI Monitoring Metrics Publisher role to the subscription.
 # This role is required to allow the UMI to publish data to Azure Sentinel/Azure Monitor.
 
-New-AzRoleAssignment -RoleDefinitionId $metricsPubRoleId -ObjectId $adsp.Id -Scope $Subscription
+New-AzRoleAssignment -RoleDefinitionId $metricsPubRoleId -ObjectId $adsp.Id -Scope $subscriptionId
 
 # Assign UMI permissions to read applications and manage owned applications.
 $graphSP = Get-AzADServicePrincipal -appId $graphAppId
