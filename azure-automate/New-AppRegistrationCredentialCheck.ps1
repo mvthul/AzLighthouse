@@ -7,41 +7,44 @@
 .DESCRIPTION
     This script checks App Registrations for expiring credentials and creates
     new ones when needed. It also reports credential status to a notification endpoint.
+
+.PARAMETER UMIId
+    The User Managed Identity Client ID. This is the ID of the user-assigned managed identity that will
+    be used to authenticate to Azure.
+.PARAMETER DaysBeforeExpiration
+    Number of days before the credential expires to create a new one.
+.PARAMETER CredentialValidDays
+    Number of days the new credential will be valid.
+.PARAMETER SecretApiUri
+    URI to post credential notifications.
+.PARAMETER AppSearchString
+    String to find existing/legacy application registrations.
+.PARAMETER NewAppRegName
+    Name for newly created application registrations.
+.PARAMETER CreateNewAppReg
+    When set to true, a new application registration will be created even if one already exists.
+
+.NOTES
+    There is no warranty or support for this script. Use at your own risk.
+    This script is provided as-is and may not work in all environments.
+    It is recommended to test this script in a non-production environment before using it in production.
+
+    This script is designed to be run in an Azure Automation account with a user-assigned managed identity.
+    It requires the Microsoft.Graph.Authentication, Microsoft.Graph.Application, Microsoft.Graph.Users.Actions,
+     Microsoft.Graph.DirectoryObjects, Microsoft.Graph.Identity.DirectoryManagement PowerShell modules.
+    The script uses the Az module to interact with Azure resources and the Microsoft Graph API to manage
+    application registrations and credentials.
 #>
 
 [CmdletBinding()]
 param (
-  [Parameter()]
-  [String]
-  # The User Managed Identity Client ID. This is the ID of the user-assigned managed identity that will
-  #be used to authenticate to Azure.
-  $UMIId,
-  [Parameter()]
-  [int]
-  # Number of days before the credential expires to create a new one.
-  $DaysBeforeExpiration = 30,
-  [Parameter()]
-  [int]
-  # Number of days the new credential will be valid.
-  $CredentialValidDays = 180,
-  [Parameter()]
-  [string]
-  # URI to post credential notifications.
-  $SecretApiUri,
-  [Parameter()]
-  [string]
-  # String to find existing/legacy application registrations
-  # Set this to an improbable to find app registration and it will create a new one with the name $NewAppRegName
-  $AppSearchString,
-  [Parameter()]
-  [string]
-  # Name for newly created application registrations.
-  $NewAppRegName,
-  [Parameter()]
-  [bool]
-  # When set to true, a new application registration will be created even if one already exists.
-  $CreateNewAppReg = $false
-
+  [Parameter()][string]$UMIId,
+  [Parameter()][int]$DaysBeforeExpiration = 30,
+  [Parameter()][int]$CredentialValidDays = 180,
+  [Parameter()][string]$SecretApiUri,
+  [Parameter()][string]$AppSearchString,
+  [Parameter()][string]$NewAppRegName,
+  [Parameter()][bool]$CreateNewAppReg = $false
 )
 
 # Set variables from automation account variables if not already set.
@@ -75,49 +78,6 @@ if ($null -eq $NewAppRegName) {
 }
 
 function New-SecretNotification {
-  [CmdletBinding(SupportsShouldProcess = $true)]
-  param (
-    [Parameter()]
-    [string]
-    $URI,
-    [Parameter()]
-    [string]
-    $ApplicationId,
-    [Parameter()]
-    [string]
-    $SecretName,
-    [Parameter()]
-    [string]
-    $PublisherDomain,
-    [Parameter()]
-    [string]
-    $TenantDomain,
-    [Parameter()]
-    [string]
-    $TenantName,
-    [Parameter()]
-    [string]
-    $TenantId,
-    [Parameter()]
-    [string]
-    $CreateDate,
-    [Parameter()]
-    [string]
-    $EndDate,
-    [Parameter()]
-    [string]
-    $KeyId,
-    [Parameter()]
-    [string]
-    $SecretText,
-    [Parameter()]
-    [string]
-    $AppId,
-    [Parameter()]
-    [string]
-    $Action
-  )
-
   <#
     .SYNOPSIS
     Posts a secret notification to provided URI.
@@ -164,6 +124,49 @@ function New-SecretNotification {
     .PARAMETER AppId
     The application ID of the application.
   #>
+
+  [CmdletBinding(SupportsShouldProcess = $true)]
+  param (
+    [Parameter()]
+    [string]
+    $URI,
+    [Parameter()]
+    [string]
+    $ApplicationId,
+    [Parameter()]
+    [string]
+    $SecretName,
+    [Parameter()]
+    [string]
+    $PublisherDomain,
+    [Parameter()]
+    [string]
+    $TenantDomain,
+    [Parameter()]
+    [string]
+    $TenantName,
+    [Parameter()]
+    [string]
+    $TenantId,
+    [Parameter()]
+    [string]
+    $CreateDate,
+    [Parameter()]
+    [string]
+    $EndDate,
+    [Parameter()]
+    [string]
+    $KeyId,
+    [Parameter()]
+    [string]
+    $SecretText,
+    [Parameter()]
+    [string]
+    $AppId,
+    [Parameter()]
+    [string]
+    $Action
+  )
 
   # Make sure all parameters are set to valid values.
   if ([string]::IsNullOrWhiteSpace($UMIId)) {
@@ -236,6 +239,27 @@ function New-SecretNotification {
 }
 
 function New-AppRegCredential {
+  <#
+
+  .SYNOPSIS
+  Creates a new application credential.
+  .DESCRIPTION
+  Creates a new application credential for the specified application ID and posts the
+  secret information to a notification endpoint.
+  .PARAMETER ApplicationId
+  The application ID of the application for which to create a new credential.
+  .PARAMETER SecretApiUri
+  The URI to post the secret notification to.
+  .PARAMETER CredentialValidDays
+  The number of days the new credential will be valid.
+  .PARAMETER AppPublisherDomain
+  The publisher domain of the application.
+  .PARAMETER AppDisplayName
+  The display name of the application.
+  .PARAMETER AppId
+  The application ID of the application.
+
+  #>
   [CmdletBinding(SupportsShouldProcess = $true)]
   param (
 
@@ -259,27 +283,6 @@ function New-AppRegCredential {
     $AppId
   )
 
-  <#
-
-  .SYNOPSIS
-  Creates a new application credential.
-  .DESCRIPTION
-  Creates a new application credential for the specified application ID and posts the 
-  secret information to a notification endpoint.
-  .PARAMETER ApplicationId
-  The application ID of the application for which to create a new credential.
-  .PARAMETER SecretApiUri
-  The URI to post the secret notification to.
-  .PARAMETER CredentialValidDays
-  The number of days the new credential will be valid.
-  .PARAMETER AppPublisherDomain
-  The publisher domain of the application.
-  .PARAMETER AppDisplayName
-  The display name of the application.
-  .PARAMETER AppId
-  The application ID of the application.
-
-  #>
   # Set the name and expiration date of the new credential based on CredentialValidDays
   $passwordCred = @{
     DisplayName = "Created by MSSP RSOC Automation on $(Get-Date)"
@@ -325,14 +328,14 @@ $azureContext = Set-AzContext -SubscriptionName $azureAutomationContext.Subscrip
 # Connect to Graph
 Connect-MgGraph -Identity -ClientId $UmiId -NoWelcome
 
-$azureTenant = Get-AzTenant -ErrorAction SilentlyContinue
+$azureTenant = Get-AzTenant -ErrorAction SilentlyContinue -TenantId $azureContext.Tenant.Id
 $env:TENANT_ID = $azureTenant.Id
 $env:TENANT_NAME = $azureTenant.Name
 $env:TENANT_DOMAIN = $azureTenant.DefaultDomain
 
 if ($null -eq $env:TENANT_NAME) {
   $mgOrg = Get-MgOrganization -ErrorAction SilentlyContinue
-  $env:TENANT_NAME = $mgOrg.DisplayName 
+  $env:TENANT_NAME = $mgOrg.DisplayName
   $env:TENANT_DOMAIN = (Get-MgDomain -ErrorAction SilentlyContinue | Where-Object { $_.IsInitial -eq $true }).Id
 }
 
@@ -342,7 +345,9 @@ $validAppRegExists = $false
 # Get all the apps from graph and then filter out only those that have "-Sentinel-Ingestion" in the name.
 
 # Attempt to get all the apps
-$allApps = Get-MgApplication -ErrorAction SilentlyContinue
+$allApps = Get-MgApplication -All -ErrorAction SilentlyContinue
+
+Write-Output "Found $($allApps.Count) applications in the tenant."
 
 # Check if the error is due to insufficient privileges
 if (-not $?) {
@@ -382,20 +387,20 @@ if ($apps.Count -ne 0 -and $CreateNewAppReg -eq $false) {
     foreach ($cred in $app.PasswordCredentials) {
       # Difference between now and the expiration of the credential
       $dateDifference = New-TimeSpan -Start (Get-Date) -End $cred.EndDateTime
-      Write-Output "`n  === Credential [$($cred.DisplayName)] ==="
-      Write-Output "  Created: $($cred.StartDateTime)"
-      Write-Output "  Expires: $($cred.EndDateTime)"
-      Write-Output "  Current Time: $(Get-Date)"
-      Write-Output "  Is Expired: $($dateDifference -le 0)"   
-      Write-Output "  Date difference (days): $($dateDifference.days)"
-      Write-Output '  === '
+      Write-Output "`n   === Credential [$($cred.DisplayName)] ==="
+      Write-Output "   Created: $($cred.StartDateTime)"
+      Write-Output "   Expires: $($cred.EndDateTime)"
+      Write-Output "   Current Time: $(Get-Date)"
+      Write-Output "   Is Expired: $($dateDifference -le 0)"
+      Write-Output "   Date difference (days): $($dateDifference.days)"
+      Write-Output '   === '
 
       # If the credential is expired or will expire within the next $DaysBeforeExpiration days,
       # we need to create a new one.
       # If the date differences is less than or equal to 0 that means it has expired.
       if ($dateDifference.days -le 0) {
 
-        Write-Output "Credential expired! $($cred.EndDateTime)" 
+        Write-Output "Credential expired! $($cred.EndDateTime)"
 
         # It is possible there are more than one credential and if one is valid we don't need to create a new one
         # This Keep track whether we need to create a new credential
@@ -409,10 +414,27 @@ if ($apps.Count -ne 0 -and $CreateNewAppReg -eq $false) {
         }
         # Post that this secret is being removed to a API/Azure Function/Azure Logic App/etc to save
         # this in the main tenant.
-        $null = New-SecretNotification -URI $SecretApiUri -ApplicationId $app.Id -AppId $app.AppId -SecretName $cred.DisplayName -PublisherDomain $app.PublisherDomain -CreateDate $cred.StartDateTime -EndDate $cred.EndDateTime -KeyId $cred.KeyId -Action 'Delete' -TenantId $env:TENANT_ID -TenantName $env:TENANT_NAME -TenantDomain $env:TENANT_DOMAIN
+        $secretNotificationParams = @{
+          URI             = $SecretApiUri
+          AppId           = $app.AppId
+          ApplicationId   = $app.Id
+          SecretName      = $appCred.Hint
+          PublisherDomain = $app.PublisherDomain
+          CreateDate      = $appCred.StartDateTime
+          EndDate         = $appCred.EndDateTime
+          KeyId           = $appCred.KeyId
+          Action          = 'Delete'
+          SecretText      = $appCred.SecretText
+          TenantId        = $env:TENANT_ID
+          TenantName      = $env:TENANT_NAME
+          TenantDomain    = $env:TENANT_DOMAIN
+        }
+
+        $null = New-SecretNotification @secretNotificationParams
       }
       elseif ($dateDifference.days -le $DaysBeforeExpiration) {
-        Write-Output "Expires within $DaysBeforeExpiration days! $((Get-Date).AddDays(- $DaysBeforeExpiration) - $cred.EndDateTime)"           
+        # If the credential is expiring within the next $DaysBeforeExpiration days, we need to create a new one.
+        Write-Output "Expires within $DaysBeforeExpiration days! $((Get-Date).AddDays(- $DaysBeforeExpiration) - $cred.EndDateTime)"
         # Yes if this is the only cred we need to create one
         $expiredCredentialCount++
       }
@@ -427,7 +449,16 @@ if ($apps.Count -ne 0 -and $CreateNewAppReg -eq $false) {
     # If there are expired/expiring credential(s) and no valid credentials
     if ($expiredCredentialCount -gt 0 -and $validCredentialExists -eq $false) {
 
-      $result = New-AppRegCredential -appId $app.AppId -ApplicationId $app.Id -SecretApiUri $SecretApiUri -CredentialValidDays $CredentialValidDays -AppPublisherDomain $app.PublisherDomain -AppDisplayName $app.DisplayName
+      $appRegCredentialParams = @{
+        AppId               = $app.AppId
+        ApplicationId       = $app.Id
+        SecretApiUri        = $SecretApiUri
+        CredentialValidDays = $CredentialValidDays
+        AppPublisherDomain  = $app.PublisherDomain
+        AppDisplayName      = $app.DisplayName
+      }
+      $result = New-AppRegCredential @appRegCredentialParams
+
       # If the app credential was not created, we need to create a new app registration; however only if
       # the app registration name matches the original search string.
       if ($app.DisplayName -like $AppSearchString -and $result -eq $false) {
@@ -458,7 +489,17 @@ if ($createNewAppReg -eq $true) {
   }
   try {
     # Create a new application registration with the name $NewAppRegName
-    $sp = New-AzADServicePrincipal -DisplayName $NewAppRegName -Description "Created by MSSP RSOC Automation on $(Get-Date)" -EndDate (Get-Date).AddDays($CredentialValidDays)
+    $description = "Created by MSSP RSOC Automation on $(Get-Date)"
+    $appRegParams = @{
+      DisplayName            = $NewAppRegName
+      Description            = $description
+      IdentifierUris         = @("https://$($NewAppRegName)")
+      SignInAudience         = 'AzureADMyOrg'
+      AppRoles               = @()
+      RequiredResourceAccess = @()
+      EndDate                = (Get-Date).AddDays($CredentialValidDays)
+    }
+    $sp = New-AzADServicePrincipal @appsRegParams
   }
   catch {
     Write-Error "Failed to create a new service principal $NewAppRegName"
@@ -483,7 +524,7 @@ if ($createNewAppReg -eq $true) {
   New-MgApplicationOwnerByRef -ApplicationId $app.Id -BodyParameter $appOwner
 
   # Assign the service principal the Owner role on the subscription
-  Write-Debug "Assigning Owner role to service principal $($sp.DisplayName) ($($sp.Id)) on subscription $subscriptionId"
+  Write-Debug "Assigning Owner role on subscription $subscriptionId to $($sp.DisplayName) ($($sp.Id))"
   New-AzRoleAssignment -RoleDefinitionId '3913510d-42f4-4e42-8a64-420c390055eb' -ObjectId $sp.Id -Scope $scope
   $appCred = $sp | Select-Object -ExpandProperty PasswordCredentials | Select-Object -First 1
 
@@ -500,7 +541,23 @@ if ($createNewAppReg -eq $true) {
     Write-Output "Posting new secret for $($app.DisplayName) ($($app.Id)) to MSSP with an expiration date of $($appCred.EndDateTime)"
 
     # Post the secret info to a API/Azure Function/Azure Logic App/etc to save this in the main tenant.
-    $null = New-SecretNotification -URI $SecretApiUri -AppId $app.AppId -ApplicationId $app.Id -SecretName $appCred.Hint -PublisherDomain $app.PublisherDomain -CreateDate $appCred.StartDateTime -EndDate $appCred.EndDateTime -KeyId $appCred.KeyId -Action 'Create' -SecretText $appCred.SecretText -TenantId $env:TENANT_ID -TenantName $env:TENANT_NAME -TenantDomain $env:TENANT_DOMAIN
+    $secretNotificationParams = @{
+      URI             = $SecretApiUri
+      AppId           = $app.AppId
+      ApplicationId   = $app.Id
+      SecretName      = $appCred.Hint
+      PublisherDomain = $app.PublisherDomain
+      CreateDate      = $appCred.StartDateTime
+      EndDate         = $appCred.EndDateTime
+      KeyId           = $appCred.KeyId
+      Action          = 'Create'
+      SecretText      = $appCred.SecretText
+      TenantId        = $env:TENANT_ID
+      TenantName      = $env:TENANT_NAME
+      TenantDomain    = $env:TENANT_DOMAIN
+    }
+
+    $null = New-SecretNotification @secretNotificationParams
     $validCredentialExists = $true
     $validAppRegExists = $true
   }
