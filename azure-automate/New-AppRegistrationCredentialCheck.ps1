@@ -231,8 +231,7 @@ function New-SecretNotification {
   }
   catch {
     Write-Error "Failed to post to $URI"
-    Write-Error "Secret for $ApplicationId was not successfully submitted to MSSP."
-    Write-Error $_.Exception.Message
+    Write-Error "Secret for $ApplicationId was not successfully submitted to MSSP. $($_.Exception.Message)"
   }
 
   return $true

@@ -24,6 +24,16 @@ param (
   [string] $AzRegion = 'eastus'
 )
 
+# Install the required PowerShell modules
+Install-Module Az.Resources -Scope CurrentUser -SkipPublisherCheck -Force -AllowClobber -AcceptLicense
+Install-Module Microsoft.Graph.Authentication -Scope CurrentUser -SkipPublisherCheck -Force -AllowClobber -AcceptLicense
+Install-Module Microsoft.Graph.Applications -Scope CurrentUser -SkipPublisherCheck -Force -AllowClobber -AcceptLicense
+
+# Add required Azure Resource Providers
+Register-AzResourceProvider -ProviderNamespace Microsoft.Insights
+Register-AzResourceProvider -ProviderNamespace Microsoft.ManagedServices
+Register-AzResourceProvider -ProviderNamespace Microsoft.ManagedIdentity
+
 do {
   $customerPrefix = Read-Host 'Enter customer prefix name: '
 } while ($customerPrefix.Length -lt 3)
@@ -35,20 +45,10 @@ do {
 $umiName = 'MSSP-Sentinel-Ingestion-UMI'
 $rg = "$($customerPrefix.ToUpper())-Sentinel-Prod-rg"
 
-Set-AzContext -SubscriptionId $subscription
 
-# Install the required PowerShell modules
-Install-Module Az.Resources -Scope CurrentUser -SkipPublisherCheck -Force -AllowClobber -AcceptLicense
-Install-Module Microsoft.Graph.Authentication -Scope CurrentUser -SkipPublisherCheck -Force -AllowClobber -AcceptLicense
-Install-Module Microsoft.Graph.Applications -Scope CurrentUser -SkipPublisherCheck -Force -AllowClobber -AcceptLicense
-
-# Add required Azure Resource Providers
-Register-AzResourceProvider -ProviderNamespace Microsoft.Insights
-Register-AzResourceProvider -ProviderNamespace Microsoft.ManagedServices
-Register-AzResourceProvider -ProviderNamespace Microsoft.ManagedIdentity
-
-# Default resource group for managed identities
-$graphAppId = '00000003-0000-0000-c000-000000000000' # Don't change this.
+# If running locally, instead of cloud shell, you will need to authenticate to Azure.
+# Connect-AzAccount
+Set-AzContext -SubscriptionId $Subscription
 
 # Get the context of the current subscription
 $subscriptionId = (Get-AzContext).Subscription.Id
@@ -68,8 +68,7 @@ if ([string]::IsNullOrEmpty((Get-AzResourceGroup -Name $rg -ErrorAction Silently
 $null = New-AzUserAssignedIdentity -Name $umiName -ResourceGroupName $rg -Location $AzRegion
 $umi = Get-AzADServicePrincipal -DisplayName $umiName
 
-Connect-AzureAD -TenantId $context.Tenant.ID
-# If Connect-AzureAd does not work, run 'Connect-AzureAD -TenantId <CustomerTenantId>'
+
 Start-Sleep 10
 
 # Assign User Assigned Identity Owner permissions to the subscription
@@ -90,17 +89,26 @@ $adsp = Get-AzADServicePrincipal -DisplayName $AppName
 
 New-AzRoleAssignment -RoleDefinitionId $metricsPubRoleId -ObjectId $adsp.Id -Scope $subscriptionId
 
-# Assign UMI permissions to read applications and manage owned applications.
-$graphSP = Get-AzADServicePrincipal -appId $graphAppId
+# The UMI needs to be granted permissions to the Microsoft Graph API
+# to allow it to view and manage its owned resources in the tenant.
+
+# Connect to Microsoft Graph. You will need to complete the authentication outside the shell.
+Connect-MgGraph -Scopes 'Application.ReadWrite.All', 'Directory.Read.All' -NoWelcome
+
+# Get the Service Principal for Microsoft Graph
+$graphSP = Get-MgServicePrincipal -Filter "AppId eq '00000003-0000-0000-c000-000000000000'"
+
 # Graph API permissions to set
 $addPermissions = @(
   'Application.ReadWrite.OwnedBy',
   'Application.Read.All'
 )
-$appRoles = $graphSP.AppRole |
-  Where-Object { ($_.Value -in $addPermissions) -and ($_.AllowedMemberType -contains 'Application') }
+
+$appRoles = $graphSP.AppRoles |
+  Where-Object { ($_.Value -in $addPermissions) -and ($_.AllowedMemberTypes -contains 'Application') }
+
 $appRoles | ForEach-Object {
-  New-AzureAdServiceAppRoleAssignment -ObjectId $umi.Id -PrincipalId $umi.Id -ResourceId $graphSp.Id -Id $_.Id
+  New-MgServicePrincipalAppRoleAssignment -ResourceId $graphSP.Id -PrincipalId $umiId -AppRoleId $_.Id
 }
 
 # Make sure the UMI is set as the owner of the application. This is required to allow
@@ -108,9 +116,6 @@ $appRoles | ForEach-Object {
 $newOwner = @{
   '@odata.id' = "https://graph.microsoft.com/v1.0/directoryObjects/{$($Umi.Id)}"
 }
-
-# Connect to Microsoft Graph. You will need to complete the authentication outside the shell.
-Connect-MgGraph -Scopes 'Application.ReadWrite.All', 'Directory.Read.All' -NoWelcome
 
 # This adds the UMI as an owner
 New-MgApplicationOwnerByRef -ApplicationId $Id -BodyParameter $newOwner
