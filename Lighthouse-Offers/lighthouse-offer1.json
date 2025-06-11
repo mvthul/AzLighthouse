@@ -63,6 +63,11 @@
                 "principalIdDisplayName": "[variables('level2GroupPrincipalIdDisplayName')]"
             },
             {
+                "principalId": "[variables('level2GroupPrincipalId')]",
+                "roleDefinitionId": "194ae4cb-b126-40b2-bd5b-6091b380977d",
+                "principalIdDisplayName": "[variables('level2GroupPrincipalIdDisplayName')]"
+            },            
+            {
 
                 "principalId": "[variables('level2GroupPrincipalId')]",
                 "roleDefinitionId": "18d7d88d-d35e-4fb5-a5c3-7773c20a72d9",
