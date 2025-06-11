@@ -33,7 +33,7 @@ do {
 $context = Set-AzContext -Subscription $subscription
 
 $umiName = "MSSP-Sentinel-Ingestion-UMI"
-$azRegion = "eastus"
+$azRegion = "westeurope"
 $rg = "$($customerPrefix)-Sentinel-Prod-rg"
 $appName = "MSSP-Sentinel-Ingestion"
 
@@ -73,13 +73,9 @@ Start-Sleep 10
 # Assign User Assigned Identity Owner permissions to the subscription 
 New-AzRoleAssignment -RoleDefinitionId $azureOwnerRoleId -ObjectId $umi.Id -Scope $scope
 Start-Sleep 5
-New-AzRoleAssignment -RoleDefinitionId $azureKVAdminRoleId -ObjectId $umi.Id -Scope $scope
-Start-Sleep 5
-New-AzRoleAssignment -RoleDefinitionId $azureKVUserRoleId -ObjectId $umi.Id -Scope $scope
-Start-Sleep 5
 
 # This requires permissions to assign app roles so may need to be rerun by an administrator. Have them run the following
-#Connect-AzureAD -TenantId $context.Tenant.Id
+Connect-AzureAD -TenantId $context.Tenant.Id
 
 # Graph API permissions to set
 $addPermissions = @(
