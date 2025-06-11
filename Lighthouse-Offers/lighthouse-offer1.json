@@ -12,10 +12,10 @@
         "mspRegistrationName": "[guid(variables('mspOfferName'))]",
         "mspAssignmentName": "[guid(variables('mspOfferName'))]",
         "level2GroupPrincipalIdDisplayName": "MSSP-SOC-Engineers",
-        "level2GroupPrincipalId": "049a8d41-2b62-4d8a-a781-e327f77c56f1",
+        "level2GroupPrincipalId": "fb472a51-3c1a-4f80-bdc0-e15d582f4a12",
         "level1GroupPrincipalIdDisplayName": "MSSP-SOC-Analysts",
-        "level1GroupPrincipalId": "eb5e30f9-fad2-4fe8-9c2b-656d794a1d64",
-        "msspAzureSecurityInsightsPrincipalId": "452aa3d4-0bc3-403b-8c82-e8eedeee7b2a",
+        "level1GroupPrincipalId": "79e2059d-650a-475e-bbc0-ff048298e1fe",
+        "msspAzureSecurityInsightsPrincipalId": "8febd7dd-8a1a-4dac-910a-16eb4673baed",
         "authorizations": [
             {
                 "principalId": "[variables('level1GroupPrincipalId')]",
