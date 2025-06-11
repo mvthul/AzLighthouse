@@ -61,12 +61,7 @@
                 "principalId": "[variables('level2GroupPrincipalId')]",
                 "roleDefinitionId": "91c1777a-f3dc-4fae-b103-61d183457e46",
                 "principalIdDisplayName": "[variables('level2GroupPrincipalIdDisplayName')]"
-            },
-            {
-                "principalId": "[variables('level2GroupPrincipalId')]",
-                "roleDefinitionId": "194ae4cb-b126-40b2-bd5b-6091b380977d",
-                "principalIdDisplayName": "[variables('level2GroupPrincipalIdDisplayName')]"
-            },            
+            },           
             {
 
                 "principalId": "[variables('level2GroupPrincipalId')]",
@@ -87,7 +82,8 @@
                     "14b46e9e-c2b7-41b4-b07b-48a6ebf60603",
                     "b86a8fe4-44ce-4948-aee5-eccb2c155cd7",
                     "12338af0-0e69-4776-bea7-57ae8d297424",
-                    "1c9b6475-caf0-4164-b5a1-2142a7116f4b"
+                    "1c9b6475-caf0-4164-b5a1-2142a7116f4b",
+                    "194ae4cb-b126-40b2-bd5b-6091b380977d"
                 ]
             }
         ]
