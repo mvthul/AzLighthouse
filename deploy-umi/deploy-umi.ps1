@@ -68,16 +68,23 @@ if ([string]::IsNullOrEmpty((Get-AzResourceGroup -Name $rg -ErrorAction Silently
 $null = New-AzUserAssignedIdentity -Name $umiName -ResourceGroupName $rg -Location $AzRegion
 $umi = Get-AzADServicePrincipal -DisplayName $umiName
 
-
+# Wait for the UMI to be created
 Start-Sleep 10
 
 # Assign User Assigned Identity Owner permissions to the subscription
 New-AzRoleAssignment -RoleDefinitionId $azureOwnerRoleId -ObjectId $umi.Id -Scope $scope
-Start-Sleep 5
+
+# Assign Key Vault permissions to the UMI
+# The UMI needs to be able to manage Key Vaults, so we assign it the
 New-AzRoleAssignment -RoleDefinitionId $azureKVAdminRoleId -ObjectId $umi.Id -Scope $scope
-Start-Sleep 5
+
+# Assign Key Vault Secrets User permissions to the UMI
+# The UMI needs to be able to read secrets from Key Vaults, so we assign it the Key Vault Secrets User role.
+# This role allows the UMI to read secrets from Key Vaults, which is necessary for its operation.
 New-AzRoleAssignment -RoleDefinitionId $azureKVUserRoleId -ObjectId $umi.Id -Scope $scope
-Start-Sleep 5
+
+# Wait for the role assignments to propagate
+Start-Sleep 15
 
 # Create the service principal/app registration
 New-AzADServicePrincipal -DisplayName $AppName
@@ -93,23 +100,7 @@ New-AzRoleAssignment -RoleDefinitionId $metricsPubRoleId -ObjectId $adsp.Id -Sco
 # to allow it to view and manage its owned resources in the tenant.
 
 # Connect to Microsoft Graph. You will need to complete the authentication outside the shell.
-Connect-MgGraph -Scopes 'Application.ReadWrite.All', 'Directory.Read.All' -NoWelcome
-
-# Get the Service Principal for Microsoft Graph
-$graphSP = Get-MgServicePrincipal -Filter "AppId eq '00000003-0000-0000-c000-000000000000'"
-
-# Graph API permissions to set
-$addPermissions = @(
-  'Application.ReadWrite.OwnedBy',
-  'Application.Read.All'
-)
-
-$appRoles = $graphSP.AppRoles |
-  Where-Object { ($_.Value -in $addPermissions) -and ($_.AllowedMemberTypes -contains 'Application') }
-
-$appRoles | ForEach-Object {
-  New-MgServicePrincipalAppRoleAssignment -ResourceId $graphSP.Id -PrincipalId $umiId -AppRoleId $_.Id
-}
+Connect-MgGraph -Scopes 'Application.ReadWrite.All', 'Directory.Read.All', 'AppRoleAssignment.ReadWrite.All' -NoWelcome
 
 # Make sure the UMI is set as the owner of the application. This is required to allow
 # the UMI to manage the app registration.
@@ -119,5 +110,21 @@ $newOwner = @{
 
 # This adds the UMI as an owner
 New-MgApplicationOwnerByRef -ApplicationId $Id -BodyParameter $newOwner
+
 # This will update the name to be in line with our new standard name
 Update-MgApplication -ApplicationId $Id -DisplayName 'MSSP-Sentinel-Ingestion'
+
+# Graph API permissions to set for UMI
+$addPermissions = @(
+  'Application.ReadWrite.OwnedBy',
+  'Application.Read.All'
+)
+
+# Get the Service Principal info for Microsoft Graph
+$graphSP = Get-MgServicePrincipal -Filter "AppId eq '00000003-0000-0000-c000-000000000000'"
+$appRoles = $graphSP.AppRoles |
+  Where-Object { ($_.Value -in $addPermissions) -and ($_.AllowedMemberTypes -contains 'Application') }
+
+$appRoles | ForEach-Object {
+  New-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $umiId -ResourceId $graphSP.Id -PrincipalId $umiId -AppRoleId $_.Id
+}
