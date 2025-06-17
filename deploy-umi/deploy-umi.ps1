@@ -45,7 +45,6 @@ do {
 $umiName = 'MSSP-Sentinel-Ingestion-UMI'
 $rg = "$($customerPrefix.ToUpper())-Sentinel-Prod-rg"
 
-
 # If running locally, instead of cloud shell, you will need to authenticate to Azure.
 # Connect-AzAccount
 Set-AzContext -SubscriptionId $Subscription
@@ -87,13 +86,13 @@ New-AzRoleAssignment -RoleDefinitionId $azureKVUserRoleId -ObjectId $umi.Id -Sco
 Start-Sleep 15
 
 # Create the service principal/app registration
-New-AzADServicePrincipal -DisplayName $AppName
+$appName = "MSSP-Sentinel-Ingestion"
+New-AzADServicePrincipal -DisplayName $appName
 Start-Sleep 20
-$adsp = Get-AzADServicePrincipal -DisplayName $AppName
+$adsp = Get-AzADServicePrincipal -DisplayName $appName
 
 # Assign the UMI Monitoring Metrics Publisher role to the subscription.
 # This role is required to allow the UMI to publish data to Azure Sentinel/Azure Monitor.
-
 New-AzRoleAssignment -RoleDefinitionId $metricsPubRoleId -ObjectId $adsp.Id -Scope $subscriptionId
 
 # The UMI needs to be granted permissions to the Microsoft Graph API
@@ -102,13 +101,30 @@ New-AzRoleAssignment -RoleDefinitionId $metricsPubRoleId -ObjectId $adsp.Id -Sco
 # Connect to Microsoft Graph. You will need to complete the authentication outside the shell.
 Connect-MgGraph -Scopes 'Application.ReadWrite.All', 'Directory.Read.All', 'AppRoleAssignment.ReadWrite.All' -NoWelcome
 
+# Get the Service Principal for Microsoft Graph
+$graphSP = Get-MgServicePrincipal -Filter "AppId eq '00000003-0000-0000-c000-000000000000'"
+
+# Graph API permissions to assign to the UMI
+# This allows the UMI to manage its service principal
+$addPermissions = @(
+  'Application.ReadWrite.OwnedBy',
+  'Application.Read.All'
+)
+
+$appRoles = $graphSP.AppRoles |
+  Where-Object { ($_.Value -in $addPermissions) -and ($_.AllowedMemberTypes -contains 'Application') }
+
+$appRoles | ForEach-Object {
+  New-MgServicePrincipalAppRoleAssignment -ResourceId $graphSP.Id -PrincipalId $umiId -AppRoleId $_.Id
+}
+
 # Make sure the UMI is set as the owner of the application. This is required to allow
 # the UMI to manage the app registration.
 $newOwner = @{
   '@odata.id' = "https://graph.microsoft.com/v1.0/directoryObjects/{$($Umi.Id)}"
 }
 
-# This adds the UMI as an owner
+# This adds the UMI as an owner to application
 New-MgApplicationOwnerByRef -ApplicationId $Id -BodyParameter $newOwner
 
 # This will update the name to be in line with our new standard name
