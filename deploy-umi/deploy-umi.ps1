@@ -52,6 +52,7 @@ Set-AzContext -SubscriptionId $Subscription
 # Get the context of the current subscription
 $subscriptionId = (Get-AzContext).Subscription.Id
 $scope = "/subscriptions/$($subscriptionId)"
+
 # Azure RBAC role IDs needed
 $azureOwnerRoleId = '8e3af657-a8ff-443c-a75c-2fe8c4bcb635' # This is Owner.
 $azureKVAdminRoleId = '00482a5a-887f-4fb3-b363-3b7fe8e74483' # This is Key Vault Administrator.
@@ -115,7 +116,7 @@ $appRoles = $graphSP.AppRoles |
   Where-Object { ($_.Value -in $addPermissions) -and ($_.AllowedMemberTypes -contains 'Application') }
 
 $appRoles | ForEach-Object {
-  New-MgServicePrincipalAppRoleAssignment -ResourceId $graphSP.Id -PrincipalId $umiId -AppRoleId $_.Id
+  New-MgServicePrincipalAppRoleAssignment -ResourceId $graphSP.Id -PrincipalId $umiId -AppRoleId $_.Id -ServicePrincipalId $umiId
 }
 
 # Make sure the UMI is set as the owner of the application. This is required to allow
@@ -129,18 +130,3 @@ New-MgApplicationOwnerByRef -ApplicationId $Id -BodyParameter $newOwner
 
 # This will update the name to be in line with our new standard name
 Update-MgApplication -ApplicationId $Id -DisplayName 'MSSP-Sentinel-Ingestion'
-
-# Graph API permissions to set for UMI
-$addPermissions = @(
-  'Application.ReadWrite.OwnedBy',
-  'Application.Read.All'
-)
-
-# Get the Service Principal info for Microsoft Graph
-$graphSP = Get-MgServicePrincipal -Filter "AppId eq '00000003-0000-0000-c000-000000000000'"
-$appRoles = $graphSP.AppRoles |
-  Where-Object { ($_.Value -in $addPermissions) -and ($_.AllowedMemberTypes -contains 'Application') }
-
-$appRoles | ForEach-Object {
-  New-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $umiId -ResourceId $graphSP.Id -PrincipalId $umiId -AppRoleId $_.Id
-}
