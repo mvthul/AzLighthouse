@@ -337,6 +337,7 @@ function New-AppRegCredential {
     }
     $null = New-SecretNotification @secretNotificationParams
     $Script:ValidAppRegExists = $true
+    $script:SummaryStats.SecretsCreated++
   }
   else {
     # If a new credential was needed, but it was not created.
@@ -344,6 +345,7 @@ function New-AppRegCredential {
     # We will check at the end to see if this is a real problem.
     Write-Warning "New secret was required for $($AppDisplayName), however a new secret could not be created"
     $Script:ValidAppRegExists = $false
+    $script:SummaryStats.SecretsFailedToCreate++
   }
 }
 
@@ -377,11 +379,25 @@ if ($null -eq $env:TENANT_NAME) {
   $mgOrg = Get-MgOrganization -ErrorAction SilentlyContinue
   $env:TENANT_NAME = $mgOrg.DisplayName
   $env:TENANT_DOMAIN = (Get-MgDomain -ErrorAction SilentlyContinue |
-    Where-Object { $_.IsInitial -eq $true }).Id
+      Where-Object { $_.IsInitial -eq $true }).Id
 }
 
 # track that at least one credential is valid
 $validAppRegExists = $false
+
+# Initialize summary tracking variables
+$script:SummaryStats = @{
+  MatchingApplications       = 0
+  TotalSecrets               = 0
+  ExpiredSecrets             = 0
+  ExpiringSecrets            = 0
+  ValidSecrets               = 0
+  SecretsDeleted             = 0
+  SecretsCreated             = 0
+  SecretsFailedToCreate      = 0
+  ApplicationsCreated        = 0
+  ApplicationsFailedToCreate = 0
+}
 
 # Get all the apps from graph and then filter out only those that have "-Sentinel-Ingestion" in the name.
 
@@ -402,9 +418,15 @@ if (-not $?) {
 # find all legacy app registrations
 $apps = $allApps | Where-Object { $_.DisplayName -like $AppSearchString -or $_.DisplayName -like $NewAppRegName }
 
+Write-Output "`n----------------------------------------------------"
+Write-Output "Tenant ID: $($env:TENANT_ID)"
+Write-Output "Tenant Name: $($env:TENANT_NAME)"
+Write-Output "Tenant Domain: $($env:TENANT_DOMAIN)"
+
 if ($apps.Count -ne 0 -and $CreateNewAppReg -eq $false) {
   # Found at least one app registration that matches the search string so we don't need to create a new one yet.
   $createNewAppReg = $false
+  $script:SummaryStats.MatchingApplications = $apps.Count
 
   # Loop through each of the apps and check credential expiration.
   foreach ($app in $apps) {
@@ -415,20 +437,20 @@ if ($apps.Count -ne 0 -and $CreateNewAppReg -eq $false) {
     [bool]$validCredentialExists = $false
 
     # Output the details for logging and troubleshooting.
-    Write-Output "`n--------------------------------------------------"
-    Write-Output "Tenant ID: $($env:TENANT_ID)"
-    Write-Output "Tenant Name: $($env:TENANT_NAME)"
-    Write-Output "Tenant Domain: $($env:TENANT_DOMAIN)"
+    Write-Output "`n----------------------------------------------------"
     Write-Output "Application: $($app.DisplayName)"
     Write-Output "ApplicationId: $($app.Id)"
     Write-Output "AppId: $($app.AppId)"
     Write-Output "Credential count: $($app.PasswordCredentials.Count)"
 
+    # Add to total secrets count
+    $script:SummaryStats.TotalSecrets += $app.PasswordCredentials.Count
+
     # Check each credential.
     foreach ($cred in $app.PasswordCredentials) {
       # Difference between now and the expiration of the credential
       $dateDifference = New-TimeSpan -Start (Get-Date) -End $cred.EndDateTime
-      Write-Output "`n   === Credential [$($cred.DisplayName)] ==="
+      Write-Output "`n   === Credential $($cred.DisplayName) ==="
       Write-Output "   Created: $($cred.StartDateTime)"
       Write-Output "   Expires: $($cred.EndDateTime)"
       Write-Output "   Current Time: $(Get-Date)"
@@ -441,7 +463,8 @@ if ($apps.Count -ne 0 -and $CreateNewAppReg -eq $false) {
       # If the date differences is less than or equal to 0 that means it has expired.
       if ($dateDifference.days -le 0) {
 
-        Write-Output "Credential expired! $($cred.EndDateTime)"
+        Write-Output "   Credential expired! $($cred.EndDateTime)"
+        $script:SummaryStats.ExpiredSecrets++
 
         # It is possible there are more than one credential and if one is valid we don't need to create a new one
         # This Keep track whether we need to create a new credential
@@ -449,6 +472,7 @@ if ($apps.Count -ne 0 -and $CreateNewAppReg -eq $false) {
         $expiredCredentialCount++
         try {
           Remove-MgApplicationPassword -ApplicationId $app.Id -KeyId $cred.KeyId
+          $script:SummaryStats.SecretsDeleted++
         }
         catch {
           Write-Error "Failed to remove the credential $($cred.DisplayName) from $($app.DisplayName)"
@@ -476,12 +500,14 @@ if ($apps.Count -ne 0 -and $CreateNewAppReg -eq $false) {
       elseif ($dateDifference.days -le $DaysBeforeExpiration) {
         # If the credential is expiring within the next $DaysBeforeExpiration days, we need to create a new one.
         $daysToExpiration = (Get-Date).AddDays(- $DaysBeforeExpiration) - $cred.EndDateTime
-        Write-Output "Expires within $DaysBeforeExpiration days! $daysToExpiration"
+        Write-Output "   Expires within $DaysBeforeExpiration days! $daysToExpiration"
+        $script:SummaryStats.ExpiringSecrets++
         # Yes if this is the only cred we need to create one
         $expiredCredentialCount++
       }
       else {
-        Write-Output "Credential Valid - Expires: $($cred.EndDateTime)"
+        Write-Output "   Credential Valid - Expires: $($cred.EndDateTime)"
+        $script:SummaryStats.ValidSecrets++
         # We have a working cred so no matter what don't create one.
         $validCredentialExists = $true
         $validAppRegExists = $true
@@ -512,7 +538,7 @@ if ($apps.Count -ne 0 -and $CreateNewAppReg -eq $false) {
     else {
       Write-Output "  At least one valid key is present for $($app.DisplayName)."
     }
-    Write-Output '--------------------------------------------------'
+    Write-Output ''
   }
 }
 else {
@@ -546,7 +572,8 @@ if ($createNewAppReg -eq $true) {
   catch {
     Write-Error "Failed to create a new service principal $NewAppRegName"
     Write-Error $_.Exception.Message
-    continue
+    $script:SummaryStats.ApplicationsFailedToCreate++
+    throw 'Cannot continue without creating service principal'
   }
 
   # Wait for the new application registration to be created.
@@ -571,53 +598,85 @@ if ($createNewAppReg -eq $true) {
     }
   }
 
+  # Validate that the application was successfully found
+  if ($null -eq $app) {
+    Write-Error "Failed to find the newly created application registration after $maxRetries attempts."
+    throw 'Cannot continue without valid application registration'
+  }
+
   Write-Debug "Found application $($app.DisplayName) ($($app.Id)) after $($retryCount) retries."
   Write-Debug "Adding the UMI as an owner of the application $($app.DisplayName) ($($app.Id))"
-  New-MgApplicationOwnerByRef -ApplicationId $app.Id -BodyParameter $appOwner
+  try {
+    New-MgApplicationOwnerByRef -ApplicationId $app.Id -BodyParameter $appOwner
+  }
+  catch {
+    Write-Warning "Failed to add UMI as owner of application: $($_.Exception.Message)"
+  }
 
   # Assign the service principal the Owner role on the subscription
   Write-Debug "Assigning Owner role on subscription $subscriptionId to $($sp.DisplayName) ($($sp.Id))"
-  New-AzRoleAssignment -RoleDefinitionId '3913510d-42f4-4e42-8a64-420c390055eb' -ObjectId $sp.Id -Scope $scope
+  try {
+    New-AzRoleAssignment -RoleDefinitionId '3913510d-42f4-4e42-8a64-420c390055eb' -ObjectId $sp.Id -Scope $scope
+  }
+  catch {
+    Write-Warning "Failed to assign Owner role to service principal: $($_.Exception.Message)"
+  }
   $appCred = $sp | Select-Object -ExpandProperty PasswordCredentials | Select-Object -First 1
 
-  if ($null -eq $app) {
-    Write-Error 'Failed to create a new application registration.'
-    #exit
+  # Validate that we have a credential from the service principal creation
+  if ($null -eq $appCred) {
+    Write-Error "No credential was created with the service principal $($sp.DisplayName)"
+    throw 'Cannot continue without valid application credential'
   }
-  else {
-    # If there are multiple application registrations, we need to select the first one.
-    if ($app.Count -gt 1) {
-      $app = $app | Select-Object -First 1
-    }
 
-    Write-Output "Posting new secret for $($app.DisplayName) ($($app.Id)) exp: $($appCred.EndDateTime) to MSSP."
-
-    # Post the secret info to a API/Azure Function/Azure Logic App/etc to save this in the main tenant.
-    $secretNotificationParams = @{
-      URI             = $SecretApiUri
-      AppId           = $app.AppId
-      ApplicationId   = $app.Id
-      SecretName      = $appCred.DisplayName
-      PublisherDomain = $app.PublisherDomain
-      CreateDate      = $appCred.StartDateTime
-      EndDate         = $appCred.EndDateTime
-      KeyId           = $appCred.KeyId
-      Action          = 'Create'
-      SecretText      = $appCred.SecretText
-      TenantId        = $env:TENANT_ID
-      TenantName      = $env:TENANT_NAME
-      TenantDomain    = $env:TENANT_DOMAIN
-    }
-
-    $null = New-SecretNotification @secretNotificationParams
-    $validCredentialExists = $true
-    $validAppRegExists = $true
+  # If there are multiple application registrations, we need to select the first one.
+  if ($app.Count -gt 1) {
+    $app = $app | Select-Object -First 1
   }
+
+  Write-Output "Posting new secret for $($app.DisplayName) ($($app.Id)) exp: $($appCred.EndDateTime) to MSSP."
+
+  # Post the secret info to a API/Azure Function/Azure Logic App/etc to save this in the main tenant.
+  $secretNotificationParams = @{
+    URI             = $SecretApiUri
+    AppId           = $app.AppId
+    ApplicationId   = $app.Id
+    SecretName      = $appCred.DisplayName
+    PublisherDomain = $app.PublisherDomain
+    CreateDate      = $appCred.StartDateTime
+    EndDate         = $appCred.EndDateTime
+    KeyId           = $appCred.KeyId
+    Action          = 'Create'
+    SecretText      = $appCred.SecretText
+    TenantId        = $env:TENANT_ID
+    TenantName      = $env:TENANT_NAME
+    TenantDomain    = $env:TENANT_DOMAIN
+  }
+
+  $null = New-SecretNotification @secretNotificationParams
+  $validCredentialExists = $true
+  $validAppRegExists = $true
+  $script:SummaryStats.ApplicationsCreated++
+  $script:SummaryStats.SecretsCreated++
 }
 
 # If there are no valid credentials after all this then we need to raise an issue
 if ($validAppRegExists -eq $false) {
-  Write-Error "Found $($apps.Count) apps; however the credentials have expired or are expiring."
+  $expiredAppsCount = ($apps | Where-Object {
+      $_.PasswordCredentials | Where-Object {
+        (New-TimeSpan -Start (Get-Date) -End $_.EndDateTime).Days -le 0
+      }
+    }).Count
+
+  $expiringAppsCount = ($apps | Where-Object {
+      $_.PasswordCredentials | Where-Object {
+        (New-TimeSpan -Start (Get-Date) -End $_.EndDateTime).Days -gt 0 -and
+        (New-TimeSpan -Start (Get-Date) -End $_.EndDateTime).Days -le $DaysBeforeExpiration
+      }
+    }).Count
+
+  Write-Error ("Found $($apps.Count) matching apps; $expiredAppsCount have expired credentials, " +
+    "$expiringAppsCount have expiring credentials (within $DaysBeforeExpiration days).")
   Write-Error 'Error creating new credentials. Please review logs.'
 
   $newSecretNotificationParams = @{
@@ -634,3 +693,46 @@ if ($validAppRegExists -eq $false) {
   $null = New-SecretNotification @newSecretNotificationParams
   $validAppRegExists = $true
 }
+
+# ============================
+# SCRIPT EXECUTION SUMMARY
+# ============================
+Write-Output "`n"
+Write-Output '=================================================================='
+Write-Output '           CREDENTIAL MANAGEMENT SCRIPT SUMMARY'
+Write-Output '=================================================================='
+Write-Output ''
+Write-Output 'Script Configuration:'
+Write-Output "  - Days Before Expiration Threshold: $DaysBeforeExpiration"
+Write-Output "  - New Credential Valid Days: $CredentialValidDays"
+Write-Output "  - App Search String: '$AppSearchString'"
+Write-Output "  - New App Registration Name: '$NewAppRegName'"
+Write-Output "  - Force Create New App: $CreateNewAppReg"
+Write-Output ''
+Write-Output 'Tenant Information:'
+Write-Output "  - Tenant ID: $($env:TENANT_ID)"
+Write-Output "  - Tenant Name: $($env:TENANT_NAME)"
+Write-Output "  - Tenant Domain: $($env:TENANT_DOMAIN)"
+Write-Output ''
+Write-Output 'Application Statistics:'
+Write-Output "  - Matching Applications Found: $($script:SummaryStats.MatchingApplications)"
+Write-Output "  - Applications Created: $($script:SummaryStats.ApplicationsCreated)"
+Write-Output "  - Applications Failed to Create: $($script:SummaryStats.ApplicationsFailedToCreate)"
+Write-Output ''
+Write-Output 'Credential Statistics:'
+Write-Output "  - Total Secrets Analyzed: $($script:SummaryStats.TotalSecrets)"
+Write-Output "  - Valid Secrets: $($script:SummaryStats.ValidSecrets)"
+Write-Output "  - Expired Secrets: $($script:SummaryStats.ExpiredSecrets)"
+Write-Output "  - Expiring Secrets (within $DaysBeforeExpiration days): $($script:SummaryStats.ExpiringSecrets)"
+Write-Output ''
+Write-Output 'Actions Performed:'
+Write-Output "  - Secrets Deleted (expired): $($script:SummaryStats.SecretsDeleted)"
+Write-Output "  - Secrets Created: $($script:SummaryStats.SecretsCreated)"
+Write-Output "  - Secrets Failed to Create: $($script:SummaryStats.SecretsFailedToCreate)"
+Write-Output ''
+
+
+$scriptStatus = if ($validAppRegExists) { 'SUCCESS' } else { 'FAILED' }
+
+Write-Output "Overall Status: $scriptStatus"
+Write-Output '=================================================================='
