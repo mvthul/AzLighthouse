@@ -116,13 +116,13 @@ $appRoles = $graphSP.AppRoles |
   Where-Object { ($_.Value -in $addPermissions) -and ($_.AllowedMemberTypes -contains 'Application') }
 
 $appRoles | ForEach-Object {
-  New-MgServicePrincipalAppRoleAssignment -ResourceId $graphSP.Id -PrincipalId $umiId -AppRoleId $_.Id -ServicePrincipalId $umiId
+  New-MgServicePrincipalAppRoleAssignment -ResourceId $graphSP.Id -PrincipalId $umi.Id -AppRoleId $_.Id -ServicePrincipalId $umi.Id
 }
 
 # Make sure the UMI is set as the owner of the application. This is required to allow
 # the UMI to manage the app registration.
 $newOwner = @{
-  '@odata.id' = "https://graph.microsoft.com/v1.0/directoryObjects/{$($Umi.Id)}"
+  '@odata.id' = "https://graph.microsoft.com/v1.0/directoryObjects/{$($umi.Id)}"
 }
 
 # This adds the UMI as an owner to application
