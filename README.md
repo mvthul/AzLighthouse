@@ -143,7 +143,7 @@ If you would like the standard connectors to be connected, the customer must be 
 
 ### Customized Sentinel-All-In-One v2
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fjoelst%2FAzLighthouse%2Fmain%2FDeploy-Sentinel%2Fazuredeploy.json/createUIDefinitionUri/https%3A%2F%2Fraw.githubusercontent.com%2Fjoelst%2FAzLighthouse%2Fmain%2FDeploy-Sentinel%2FcreateUiDefinition.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw%2Egithubusercontent%2Ecom%2Fmvthul%2FAzLighthouse%2Frefs%2Fheads%2Fmain%2FDeploy%2DSentinel%2Fazuredeploy%2Ejson/createUIDefinitionUri/https%3A%2F%2Fraw%2Egithubusercontent%2Ecom%2Fmvthul%2FAzLighthouse%2Frefs%2Fheads%2Fmain%2FDeploy%2DSentinel%2FcreateUiDefinition%2Ejson)
 
 ### Work-In-Progress Customize Sentinel-All-In-One v2
 
