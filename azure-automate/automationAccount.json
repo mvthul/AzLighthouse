@@ -54,6 +54,20 @@
       },
       "defaultValue": "Get-SentinelPricing"
     },
+    "searchJobRunbookContentUri": {
+      "type": "string",
+      "metadata": {
+        "description": "URL for the Sentinel search job runbook content"
+      },
+      "defaultValue": "https://raw.githubusercontent.com/joelst/AzLighthouse/refs/heads/main/azure-automate/Invoke-AzSentinelSearchJob.ps1"
+    },
+    "searchJobRunbookName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Sentinel search job runbook"
+      },
+      "defaultValue": "Invoke-AzSentinelSearchJob"
+    },
     "userAssignedIdentityName": {
       "type": "string",
       "metadata": {
@@ -132,6 +146,7 @@
     "servicePrincipalCredentialRunbookDescription": "Runbook to manage service principal credentials on behalf of the SOC",
     "dataConnectorRunbookDescription": "Runbook to report the data connector status for Sentinel",
     "pricingRunbookDescription": "Runbook to retrieve pricing tier information for Sentinel",
+    "searchJobRunbookDescription": "Runbook to create Sentinel search jobs in Log Analytics",
     "sentinelWorkspaceResourceId": "[if(startsWith(parameters('sentinelWorkspaceName'), '/subscriptions/'), parameters('sentinelWorkspaceName'), resourceId('Microsoft.OperationalInsights/workspaces', parameters('sentinelWorkspaceName')))]"
   },
   "resources": [
@@ -215,6 +230,28 @@
         "description": "[variables('pricingRunbookDescription')]",
         "publishContentLink": {
           "uri": "[parameters('pricingRunbookContentUri')]",
+          "version": "1.0.0.0"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Automation/automationAccounts', parameters('automationAccountName'))]",
+        "[resourceId('Microsoft.Automation/automationAccounts/runtimeEnvironments', parameters('automationAccountName'), variables('pwshRuntimeName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Automation/automationAccounts/runbooks",
+      "apiVersion": "2024-10-23",
+      "name": "[format('{0}/{1}', parameters('automationAccountName'), parameters('searchJobRunbookName'))]",
+      "location": "[resourceGroup().location]",
+      "tags": {},
+      "properties": {
+        "runbookType": "PowerShell",
+        "runtimeEnvironment": "[variables('pwshRuntimeName')]",
+        "logProgress": false,
+        "logVerbose": false,
+        "description": "[variables('searchJobRunbookDescription')]",
+        "publishContentLink": {
+          "uri": "[parameters('searchJobRunbookContentUri')]",
           "version": "1.0.0.0"
         }
       },

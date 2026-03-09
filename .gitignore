@@ -2,3 +2,4 @@
 azure-automate/*Testing.ps1
 .fake
 azure-automate/Get-PricingTier.ps1
+.github/copilot-instructions.md
