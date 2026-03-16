@@ -19,7 +19,7 @@
         "name": "automationAccountName",
         "type": "Microsoft.Common.TextBox",
         "label": "Automation Account name",
-        "defaultValue": "SOC-Automation",
+        "defaultValue": "CaptureTech-SOC-Automation",
         "toolTip": "Name of the new Automation Account.",
         "constraints": {
           "required": true,
@@ -44,7 +44,7 @@
         "multiselect": false,
         "defaultValue": [
           {
-            "value": "SOC-Sentinel-Ingestion-UMI"
+            "value": "CaptureTech-SOC-UMI"
           }
         ],
         "constraints": {
@@ -113,7 +113,7 @@
             "name": "servicePrincipalCredentialRunbookContentUri",
             "type": "Microsoft.Common.TextBox",
             "label": "Service principal credential runbook content URI",
-            "defaultValue": "https://raw.githubusercontent.com/joelst/AzLighthouse/refs/heads/main/azure-automate/Update-AppRegistrationCredential.ps1",
+            "defaultValue": "https://raw.githubusercontent.com/mvthul/AzLighthouse/refs/heads/main/azure-automate/Update-AppRegistrationCredential.ps1",
             "toolTip": "URL for the service principal credential runbook content."
           },
           {
@@ -128,7 +128,7 @@
             "name": "connectorRunbookContentUri",
             "type": "Microsoft.Common.TextBox",
             "label": "Data connector runbook content URI",
-            "defaultValue": "https://raw.githubusercontent.com/joelst/AzLighthouse/refs/heads/main/azure-automate/Get-DataConnectorStatus.ps1",
+            "defaultValue": "https://raw.githubusercontent.com/mvthul/AzLighthouse/refs/heads/main/azure-automate/Get-DataConnectorStatus.ps1",
             "toolTip": "URL for the data connector runbook content."
           },
           {
@@ -143,7 +143,7 @@
             "name": "pricingRunbookContentUri",
             "type": "Microsoft.Common.TextBox",
             "label": "Pricing runbook content URI",
-            "defaultValue": "https://raw.githubusercontent.com/joelst/AzLighthouse/refs/heads/main/azure-automate/Get-SentinelPricing.ps1",
+            "defaultValue": "https://raw.githubusercontent.com/mvthul/AzLighthouse/refs/heads/main/azure-automate/Get-SentinelPricing.ps1",
             "toolTip": "URL for the pricing runbook content."
           }
         ]
@@ -163,7 +163,7 @@
             "name": "servicePrincipalCredentialAppReg",
             "type": "Microsoft.Common.TextBox",
             "label": "Sentinel ingestion app registration name",
-            "defaultValue": "SOC-Sentinel-Ingestion",
+            "defaultValue": "CaptureTech-SOC-Sentinel-LogIngest",
             "toolTip": "Name of the app registration (service principal) used for Sentinel ingestion."
           },
           {

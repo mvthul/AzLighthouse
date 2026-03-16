@@ -54,10 +54,10 @@ New-AzRoleAssignment -ObjectId <UAMI-ObjectId> `
 
 Click the button below to deploy directly to your Azure subscription:
 
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fjoelst%2FAzLighthouse%2Fmain%2Fazure-automate%2FautomationAccount.json" target="_blank"><img src="https://aka.ms/deploytoazurebutton"/></a>
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmvthul%2FAzLighthouse%2Fmain%2Fazure-automate%2FautomationAccount.json" target="_blank"><img src="https://aka.ms/deploytoazurebutton"/></a>
 
 Customized UI
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fjoelst%2FAzLighthouse%2Fmain%2Fazure-automate%2FautomationAccount.json/createUIDefinitionUri/https%3A%2F%2Fraw.githubusercontent.com%2Fjoelst%2FAzLighthouse%2Fmain%2Fazure-automate%2FcreateUiDefinition.json" target="_blank"><img src="https://aka.ms/deploytoazurebutton"/>
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmvthul%2FAzLighthouse%2Fmain%2Fazure-automate%2FautomationAccount.json/createUIDefinitionUri/https%3A%2F%2Fraw.githubusercontent.com%2Fmvthul%2FAzLighthouse%2Fmain%2Fazure-automate%2FcreateUiDefinition.json" target="_blank"><img src="https://aka.ms/deploytoazurebutton"/>
 
 
 **Deployment Parameters:**

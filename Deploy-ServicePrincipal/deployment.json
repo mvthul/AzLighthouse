@@ -8,12 +8,11 @@
         },
         "userAssignedIdentityName": {
             "type": "String",
-            "defaultValue": "MsspName-SOC-UMI"
+            "defaultValue": "CaptureTech-SOC-UMI"
         }
     },
     "variables": {
-        // This should be customized in the template to reflect the naming standard.
-        "appRegistrationDisplayName": "MsspNameSOC-Sentinel-LogIngest"
+        "appRegistrationDisplayName": "CaptureTech-SOC-Sentinel-LogIngest"
     },
     "resources": [
         {

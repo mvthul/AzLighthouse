@@ -23,7 +23,7 @@
                 "forceUpdateTag": "1",
                 "azPowerShellVersion": "13.2",
                 "arguments": "[concat(' -CustomerPrefix ',parameters('customerPrefix'),' -SubscriptionId ',subscription().subscriptionId,' -UmiName ',parameters('umiName'))]",
-                "primaryScriptUri": "https://raw.githubusercontent.com/joelst/AzLighthouse/refs/heads/main/deploy-umi/deploy-umi.ps1",
+                "primaryScriptUri": "https://raw.githubusercontent.com/mvthul/AzLighthouse/refs/heads/main/deploy-umi/deploy-umi.ps1",
                 "supportingScriptUris": [],
                 "timeout": "PT30M",
                 "cleanupPreference": "OnSuccess",
