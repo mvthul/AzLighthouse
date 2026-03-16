@@ -79,7 +79,7 @@ Customized UI
 ```powershell
 # Set variables
 $resourceGroupName = "SOC-Automation-RG"
-$location = "eastus"
+$location = "westeurope"
 $templateFile = ".\automationAccount.json"
 
 # Create resource group if it doesn't exist
@@ -104,7 +104,7 @@ New-AzResourceGroupDeployment `
 ```bash
 # Set variables
 RESOURCE_GROUP="SOC-Automation-RG"
-LOCATION="eastus"
+LOCATION="westeurope"
 TEMPLATE_FILE="./automationAccount.json"
 
 # Create resource group

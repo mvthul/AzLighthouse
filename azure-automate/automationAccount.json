@@ -109,7 +109,7 @@
         "description": "Sentinel Log Analytics workspace. Enter either the workspace name (same RG/sub as this deployment) or a full workspace resourceId.",
         "strongType": "Microsoft.OperationalInsights/workspaces"
       },
-      "defaultValue": "xxx-Sentinel-eastus"
+      "defaultValue": "xxx-Sentinel-westeurope"
     },
     "dataConnectorLogicAppUri": {
       "type": "string",

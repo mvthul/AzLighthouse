@@ -39,7 +39,7 @@ Variable names used for fallback when parameters are omitted:
   -UmiClientId '11111111-1111-1111-1111-111111111111' `
   -SubscriptionId '22222222-2222-2222-2222-222222222222' `
   -ResourceGroupName 'rg-sentinel-prod' `
-  -WorkspaceName 'law-sentinel-eastus' `
+  -WorkspaceName 'law-sentinel-westeurope' `
   -OutputTableName 'FailedSignInAnalysis' `
   -SearchQuery 'SigninLogs | where ResultType != 0 | project TimeGenerated, UserPrincipalName, ResultType, Location' `
   -StartSearchTime '2026-02-01T00:00:00Z' `
@@ -57,7 +57,7 @@ The script returns immediately; the search job runs asynchronously in the backgr
   -UmiClientId '11111111-1111-1111-1111-111111111111' `
   -SubscriptionId '22222222-2222-2222-2222-222222222222' `
   -ResourceGroupName 'rg-sentinel-prod' `
-  -WorkspaceName 'law-sentinel-eastus' `
+  -WorkspaceName 'law-sentinel-westeurope' `
   -OutputTableName 'SecurityEvents_HighSeverity' `
   -SearchQuery 'SecurityEvent | where Level <= 2 | project TimeGenerated, Activity, Computer' `
   -StartSearchTime '2026-01-15T00:00:00-05:00' `

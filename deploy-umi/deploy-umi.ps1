@@ -11,7 +11,7 @@
 .PARAMETER Subscription
   The subscription ID where the UMI will be deployed.
 .PARAMETER AzRegion
-  The Azure region where the UMI will be deployed. Default is 'eastus'.
+  The Azure region where the UMI will be deployed. Default is 'westeurope'.
 .PARAMETER SkipModuleInstall
   Skip module installation (useful in Azure Cloud Shell where modules may already be available).
 
@@ -25,7 +25,7 @@ param (
   [string] $Subscription,
 
   [Parameter(Mandatory = $false)]
-  [string] $AzRegion = 'eastus',
+  [string] $AzRegion = 'westeurope',
 
   [Parameter(Mandatory = $false)]
   [switch] $SkipModuleInstall

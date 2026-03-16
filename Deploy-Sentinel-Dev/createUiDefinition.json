@@ -14,7 +14,7 @@
                         "Microsoft.OperationalInsights/workspaces"
                     ],
                     "allowedValues": [
-                        "eastus",
+                        "westeurope",
                         "eastus2",
                         "westus2",
                         "australiacentral",
